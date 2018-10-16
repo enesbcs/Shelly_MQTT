@@ -1,7 +1,8 @@
 # ShellyMQTT - Domoticz Python Plugin
 Python plugin for Shelly relay devices using MQTT protocol
 
-MQTT parts based on heavily on the [zigbee2mqtt] project (https://github.com/Koenkk/zigbee2mqtt) big thanks for it!
+MQTT parts based on heavily on the [zigbee2mqtt] project (https://github.com/stas-demydiuk/domoticz-zigbee2mqtt-plugin) 
+big thanks for it!
 
 ## Prerequisites
 
