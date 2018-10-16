@@ -6,7 +6,7 @@ big thanks for it!
 
 ## Prerequisites
 
-Setup and run MQTT broker and an MQTT capable Shelly device.
+Setup and run MQTT broker and an MQTT capable Shelly device. (http://shelly-api-docs.shelly.cloud/#mqtt-support-beta)
 
 ## Installation
 
