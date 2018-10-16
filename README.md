@@ -35,4 +35,5 @@ git pull
 Shelly relays with the following MQTT messages:
 
 shellies/shellydevice-<deviceid>/relay/0 to report status: on or off
+  
 shellies/shellydevice-<deviceid>/relay/0/command accepts on and off
