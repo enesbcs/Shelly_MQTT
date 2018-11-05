@@ -1,11 +1,12 @@
 # ShellyMQTT - Domoticz Python Plugin
 Python plugin for Shelly relay devices using MQTT protocol
 
-MQTT parts based on heavily on the [zigbee2mqtt] project (https://github.com/Koenkk/zigbee2mqtt) big thanks for it!
+MQTT parts based on heavily on the [zigbee2mqtt] project (https://github.com/stas-demydiuk/domoticz-zigbee2mqtt-plugin) 
+big thanks for it!
 
 ## Prerequisites
 
-Setup and run MQTT broker and an MQTT capable Shelly device.
+Setup and run MQTT broker and an MQTT capable Shelly device. (http://shelly-api-docs.shelly.cloud/#mqtt-support-beta)
 
 ## Installation
 
@@ -35,4 +36,5 @@ git pull
 Shelly relays with the following MQTT messages:
 
 shellies/shellydevice-<deviceid>/relay/0 to report status: on or off
+  
 shellies/shellydevice-<deviceid>/relay/0/command accepts on and off
