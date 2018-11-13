@@ -43,7 +43,6 @@ class BasePlugin:
         self.mqttserverport = Parameters["Port"].strip()
         self.mqttClient = MqttClient(self.mqttserveraddress, self.mqttserverport, self.onMQTTConnected, self.onMQTTDisconnected, self.onMQTTPublish, self.onMQTTSubscribed)
 
-
     def checkDevices(self):
         Domoticz.Debug("checkDevices called")
 
