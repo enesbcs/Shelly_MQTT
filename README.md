@@ -34,5 +34,5 @@ git pull
 ## Supported devices
 
 Tested and working with:
- -Shelly 1 Open Source (relay)
- -Shelly Plug (relay and power consumption reporting)
+ - Shelly 1 Open Source (relay)
+ - Shelly Plug (relay and power consumption reporting)
