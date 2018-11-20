@@ -43,6 +43,7 @@ class BasePlugin:
         self.mqttserverport = Parameters["Port"].strip()
         self.mqttClient = MqttClient(self.mqttserveraddress, self.mqttserverport, self.onMQTTConnected, self.onMQTTDisconnected, self.onMQTTPublish, self.onMQTTSubscribed)
 
+
     def checkDevices(self):
         Domoticz.Debug("checkDevices called")
 
@@ -58,7 +59,7 @@ class BasePlugin:
          relnum = int(device_id[2].strip())
         except:
          relnum = -1
-        if relnum in [0,1]:
+        if relnum in [0,3] and len(device_id)==3:
          mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/relay/"+device_id[2]+"/command"
          cmd = Command.strip().lower()
          Domoticz.Debug(mqttpath+" "+cmd)
@@ -99,15 +100,23 @@ class BasePlugin:
         Domoticz.Debug("MQTT message: " + topic + " " + str(message))
         mqttpath = topic.split('/')
         if (mqttpath[0] == self.base_topic): 
-         if (mqttpath[2] == "relay") and (len(mqttpath)==4):   # only RELAY type is supported currently...
+         if (len(mqttpath)>3) and (mqttpath[2] == "relay") and (mqttpath[len(mqttpath)-1]!="command"):   # RELAY type, not command->process
           unitname = mqttpath[1]+"-"+mqttpath[3]
           unitname = unitname.strip()
-          bindev=False
+          devtype = 1
           try:
            funcid = int(mqttpath[3].strip())
-           bindev=True
+           devtype=0
           except:
-           bindev=False
+           devtype = 1
+          if len(mqttpath)==5 and devtype==0:
+           devtype = 2
+          subval=""
+          if devtype==1:
+               subval = mqttpath[3].strip()
+          elif devtype==2:
+               subval = mqttpath[4].strip()
+               unitname=unitname+"-"+subval
           iUnit = -1
           for Device in Devices:
            try:
@@ -118,14 +127,14 @@ class BasePlugin:
             pass
           if iUnit<0: # if device does not exists in Domoticz, than create it
              iUnit=len(Devices)+1
-             if bindev:
+             if devtype==0:
               Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="Switch",Used=1,DeviceID=unitname).Create()
              else:
-              if mqttpath[3].strip()=="energy":
+              if subval=="energy":
                Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="kWh",Used=1,DeviceID=unitname).Create()
-              elif mqttpath[3].strip()=="power":
+              elif subval=="power":
                Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="Usage",Used=1,DeviceID=unitname).Create()
-          if bindev:
+          if devtype==0:
            if ((str(message).strip().lower()) == "on"): # set device status in either way
             Devices[iUnit].Update(1,"On") 
            else:
@@ -134,9 +143,9 @@ class BasePlugin:
            value = 0
            try:
             value = int(str(message).strip())
-            if mqttpath[3].strip()=="energy":
+            if subval=="energy":
              value = (value/100) # 10*Wh??
-             value = str(value)+";"
+             value = str(value)+";0"
            except:
             value=str(message).strip()
            Devices[iUnit].Update(0,str(value))
