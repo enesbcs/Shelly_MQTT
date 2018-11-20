@@ -33,8 +33,6 @@ git pull
 
 ## Supported devices
 
-Shelly relays with the following MQTT messages:
-
-shellies/shellydevice-<deviceid>/relay/0 to report status: on or off
-  
-shellies/shellydevice-<deviceid>/relay/0/command accepts on and off
+Tested and working with:
+ -Shelly 1 Open Source (relay)
+ -Shelly Plug (relay and power consumption reporting)
