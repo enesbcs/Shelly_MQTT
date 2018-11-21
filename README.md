@@ -36,3 +36,4 @@ git pull
 Tested and working with:
  - Shelly 1 Open Source (relay)
  - Shelly Plug (relay and power consumption reporting)
+ - Shelly2 Switch (relay and roller shutter mode)

@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.0.1">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.2.0">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -59,14 +59,27 @@ class BasePlugin:
          relnum = int(device_id[2].strip())
         except:
          relnum = -1
-        if relnum in [0,3] and len(device_id)==3:
+        if relnum in range(0,4) and len(device_id)==3: # check if is it a normal relay
          mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/relay/"+device_id[2]+"/command"
          cmd = Command.strip().lower()
          Domoticz.Debug(mqttpath+" "+cmd)
-         if cmd in ["on","off"]:
+         if cmd in ["on","off"]:        # commands are simply on or off
           self.mqttClient.Publish(mqttpath, cmd)
           if cmd=="off":
            device.Update(Level,Command) # force device update if it is offline
+        # otherwise check if it is a roller shutter
+        elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="roller":
+         cmd = Command.strip().lower()
+         scmd = ""                      # Translate Domoticz command to Shelly command
+         if cmd == "stop":
+          scmd = "stop"
+         elif cmd == "off":
+          scmd = "open"
+         elif cmd == "on":
+          scmd = "close"
+         if scmd != "":
+          mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command"
+          self.mqttClient.Publish(mqttpath, scmd)
 
     def onConnect(self, Connection, Status, Description):
         self.mqttClient.onConnect(Connection, Status, Description)
@@ -100,7 +113,8 @@ class BasePlugin:
         Domoticz.Debug("MQTT message: " + topic + " " + str(message))
         mqttpath = topic.split('/')
         if (mqttpath[0] == self.base_topic): 
-         if (len(mqttpath)>3) and (mqttpath[2] == "relay") and (mqttpath[len(mqttpath)-1]!="command"):   # RELAY type, not command->process
+         # RELAY type, not command->process
+         if (len(mqttpath)>3) and (mqttpath[2] == "relay") and (mqttpath[len(mqttpath)-1]!="command"):   
           unitname = mqttpath[1]+"-"+mqttpath[3]
           unitname = unitname.strip()
           devtype = 1
@@ -126,7 +140,13 @@ class BasePlugin:
            except:
             pass
           if iUnit<0: # if device does not exists in Domoticz, than create it
-             iUnit=len(Devices)+1
+             iUnit = 0
+             for x in range(1,256):
+              if x not in Devices:
+               iUnit=x
+               break
+             if iUnit==0:
+              iUnit=len(Devices)+1
              if devtype==0:
               Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="Switch",Used=1,DeviceID=unitname).Create()
              else:
@@ -135,10 +155,12 @@ class BasePlugin:
               elif subval=="power":
                Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="Usage",Used=1,DeviceID=unitname).Create()
           if devtype==0:
-           if ((str(message).strip().lower()) == "on"): # set device status in either way
-            Devices[iUnit].Update(1,"On") 
-           else:
-            Devices[iUnit].Update(0,"Off") 
+           scmd = str(message).strip().lower()
+           if (str(Devices[iUnit].sValue).lower() != scmd):
+            if (scmd == "on"): # set device status if needed
+             Devices[iUnit].Update(1,"On") 
+            else:
+             Devices[iUnit].Update(0,"Off") 
           else:
            value = 0
            try:
@@ -149,7 +171,39 @@ class BasePlugin:
            except:
             value=str(message).strip()
            Devices[iUnit].Update(0,str(value))
-
+          return True
+         # ROLLER type, not command->process
+         elif (len(mqttpath)>3) and (mqttpath[2] == "roller") and (mqttpath[len(mqttpath)-1]!="command"):
+          unitname = mqttpath[1]+"-"+mqttpath[3]+"-roller"
+          unitname = unitname.strip()
+          iUnit = -1
+          for Device in Devices:
+           try:
+            if (Devices[Device].DeviceID.strip() == unitname):
+             iUnit = Device
+             break
+           except:
+            pass
+          if iUnit<0: # if device does not exists in Domoticz, than create it
+             iUnit = 0
+             for x in range(1,256):
+              if x not in Devices:
+               iUnit=x
+               break
+             if iUnit==0:
+              iUnit=len(Devices)+1
+             Domoticz.Device(Name=unitname, Unit=iUnit,Type=244, Subtype=62, Switchtype=15,Used=1,DeviceID=unitname).Create() # create Venetian Blinds EU type
+          Domoticz.Debug(str(Devices[iUnit].Name)+ " " + str(message))
+          bcmd = str(message).strip().lower()
+          if bcmd == "stop" and str(Devices[iUnit].sValue).lower() !="stop":
+           Devices[iUnit].Update(17,"Stop") # stop
+           return True
+          elif bcmd == "open" and str(Devices[iUnit].sValue).lower() !="off":
+           Devices[iUnit].Update(0,"Off") # open
+           return True
+          elif bcmd == "close" and str(Devices[iUnit].sValue).lower() !="on":
+           Devices[iUnit].Update(1,"On")  # close
+           return True
 
 global _plugin
 _plugin = BasePlugin()
