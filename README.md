@@ -6,6 +6,8 @@ big thanks for it!
 
 ## Prerequisites
 
+Tested and works with Domoticz v4.x.
+
 If you do not have a working Python >3.4 installation, please install it first! ( https://www.domoticz.com/wiki/Using_Python_plugins )
 
 Setup and run MQTT broker and an MQTT capable Shelly device. (http://shelly-api-docs.shelly.cloud/#mqtt-support-beta)
