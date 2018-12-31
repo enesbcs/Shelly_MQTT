@@ -232,7 +232,7 @@ class BasePlugin:
             Devices[iUnit].Update(1,"On")  # close
             return True
          # INPUT type, not command->process
-         if (len(mqttpath)>3) and (mqttpath[2] == "input") and (mqttpath[len(mqttpath)-1]!="command"):
+         elif (len(mqttpath)>3) and (mqttpath[2] == "input") and (mqttpath[len(mqttpath)-1]!="command"):
           unitname = mqttpath[1]+"-"+mqttpath[3]+"-input"
           unitname = unitname.strip()
           iUnit = -1
@@ -261,6 +261,54 @@ class BasePlugin:
              Devices[iUnit].Update(1,"On") 
             else:
              Devices[iUnit].Update(0,"Off") 
+         # SENSOR type, not command->process
+         elif (len(mqttpath)>3) and (mqttpath[2] == "sensor"):
+          unitname = mqttpath[1]+"-sensor"
+          unitname = unitname.strip()
+          iUnit = -1
+          for Device in Devices:
+           try:
+            if (Devices[Device].DeviceID.strip() == unitname):
+             iUnit = Device
+             break
+           except:
+            pass
+          if iUnit<0: # if device does not exists in Domoticz, than create it
+             iUnit = 0
+             for x in range(1,256):
+              if x not in Devices:
+               iUnit=x
+               break
+             if iUnit==0:
+              iUnit=len(Devices)+1
+             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Temp+Hum",Used=1,DeviceID=unitname).Create() # create Temp+Hum Type=82
+          stype = mqttpath[3].strip().lower()
+          curval = Devices[iUnit].sValue
+          try:
+           mval = float(message)
+          except:
+           mval = str(message).strip()
+          if stype=="battery":
+           Devices[iUnit].Update(0,curval,BatteryLevel=int(mval))
+          elif stype=="temperature":
+           try:
+            env = curval.split(";")
+           except:
+            env = [0,0]
+           if len(env)<2:
+            env.append(0)
+            env.append(0)
+           sval = str(mval)+";"+str(env[1])+";0"
+           Devices[iUnit].Update(0,sval)
+          elif stype=="humidity":
+           try:
+            env = curval.split(";")
+           except:
+            env = [0,0]
+           if len(env)<1:
+            env.append(0)
+           sval = str(env[0]) + ";"+ str(mval)+";0"
+           Devices[iUnit].Update(0,sval)
 
 
 global _plugin
