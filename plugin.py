@@ -80,6 +80,13 @@ class BasePlugin:
          if scmd != "":
           mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command"
           self.mqttClient.Publish(mqttpath, scmd)
+        # experimental support for v1.4 Percentage poisitioning
+        elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="pos":
+          if str(Command).strip().lower()=="set level":
+           pos = str(Level).strip().lower()
+           mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command/pos"
+           Domoticz.Debug(mqttpath+" "+str(Command)+" "+str(Level))
+           self.mqttClient.Publish(mqttpath, pos)
 
     def onConnect(self, Connection, Status, Description):
         self.mqttClient.onConnect(Connection, Status, Description)
@@ -110,11 +117,19 @@ class BasePlugin:
         Domoticz.Debug("onMQTTSubscribed")
 
     def onMQTTPublish(self, topic, message): # process incoming MQTT statuses
+        if "/announce" in topic: # announce did not contain any information for us
+         return False
+        try:
+         topic = str(topic)
+         message = str(message)
+        except:
+         Domoticz.Debug("MQTT message from " + topic + " message is not a valid string") #if message is not a real string, drop it
+         return False
         Domoticz.Debug("MQTT message: " + topic + " " + str(message))
         mqttpath = topic.split('/')
         if (mqttpath[0] == self.base_topic): 
          # RELAY type, not command->process
-         if (len(mqttpath)>3) and (mqttpath[2] == "relay") and (mqttpath[len(mqttpath)-1]!="command"):   
+         if (len(mqttpath)>3) and (mqttpath[2] == "relay") and ("/command" not in topic):
           unitname = mqttpath[1]+"-"+mqttpath[3]
           unitname = unitname.strip()
           devtype = 1
@@ -164,7 +179,7 @@ class BasePlugin:
           else:
            value = 0
            try:
-            value = int(str(message).strip())
+            value = float(str(message).strip())
             if subval=="energy":
              value = (value/100) # 10*Wh??
              value = str(value)+";0"
@@ -173,8 +188,11 @@ class BasePlugin:
            Devices[iUnit].Update(0,str(value))
           return True
          # ROLLER type, not command->process
-         elif (len(mqttpath)>3) and (mqttpath[2] == "roller") and (mqttpath[len(mqttpath)-1]!="command"):
-          unitname = mqttpath[1]+"-"+mqttpath[3]+"-roller"
+         elif (len(mqttpath)>3) and (mqttpath[2] == "roller") and ("/command" not in topic):
+          if mqttpath[len(mqttpath)-1]=="pos":
+           unitname = mqttpath[1]+"-"+mqttpath[3]+"-pos"
+          else:
+           unitname = mqttpath[1]+"-"+mqttpath[3]+"-roller"
           unitname = unitname.strip()
           iUnit = -1
           for Device in Devices:
@@ -192,18 +210,58 @@ class BasePlugin:
                break
              if iUnit==0:
               iUnit=len(Devices)+1
-             Domoticz.Device(Name=unitname, Unit=iUnit,Type=244, Subtype=62, Switchtype=15,Used=1,DeviceID=unitname).Create() # create Venetian Blinds EU type
-          Domoticz.Debug(str(Devices[iUnit].Name)+ " " + str(message))
-          bcmd = str(message).strip().lower()
-          if bcmd == "stop" and str(Devices[iUnit].sValue).lower() !="stop":
-           Devices[iUnit].Update(17,"Stop") # stop
-           return True
-          elif bcmd == "open" and str(Devices[iUnit].sValue).lower() !="off":
-           Devices[iUnit].Update(0,"Off") # open
-           return True
-          elif bcmd == "close" and str(Devices[iUnit].sValue).lower() !="on":
-           Devices[iUnit].Update(1,"On")  # close
-           return True
+             if "-pos" in unitname:
+              Domoticz.Device(Name=unitname, Unit=iUnit,Type=244, Subtype=62, Switchtype=13,Used=1,DeviceID=unitname).Create() # create Blinds Percentage
+             else:
+              Domoticz.Device(Name=unitname, Unit=iUnit,Type=244, Subtype=62, Switchtype=15,Used=1,DeviceID=unitname).Create() # create Venetian Blinds EU type
+          if "-pos" in unitname:
+           try:
+            pval = str(message).strip()
+            Devices[iUnit].Update(0,pval)
+           except:
+            Domoticz.Debug("MQTT message error " + str(topic) + ":"+ str(message))
+          else:
+           bcmd = str(message).strip().lower()
+           if bcmd == "stop" and str(Devices[iUnit].sValue).lower() !="stop":
+            Devices[iUnit].Update(17,"Stop") # stop
+            return True
+           elif bcmd == "open" and str(Devices[iUnit].sValue).lower() !="off":
+            Devices[iUnit].Update(0,"Off") # open
+            return True
+           elif bcmd == "close" and str(Devices[iUnit].sValue).lower() !="on":
+            Devices[iUnit].Update(1,"On")  # close
+            return True
+         # INPUT type, not command->process
+         if (len(mqttpath)>3) and (mqttpath[2] == "input") and (mqttpath[len(mqttpath)-1]!="command"):
+          unitname = mqttpath[1]+"-"+mqttpath[3]+"-input"
+          unitname = unitname.strip()
+          iUnit = -1
+          for Device in Devices:
+           try:
+            if (Devices[Device].DeviceID.strip() == unitname):
+             iUnit = Device
+             break
+           except:
+            pass
+          if iUnit<0: # if device does not exists in Domoticz, than create it
+             iUnit = 0
+             for x in range(1,256):
+              if x not in Devices:
+               iUnit=x
+               break
+             if iUnit==0:
+              iUnit=len(Devices)+1
+             Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="Switch",Used=1,DeviceID=unitname).Create()
+          if str(message).lower=="on" or str(message)=="1":
+           scmd = "on"
+          else:
+           scmd = "off"
+          if (str(Devices[iUnit].sValue).lower() != scmd):
+            if (scmd == "on"): # set device status if needed
+             Devices[iUnit].Update(1,"On") 
+            else:
+             Devices[iUnit].Update(0,"Off") 
+
 
 global _plugin
 _plugin = BasePlugin()
