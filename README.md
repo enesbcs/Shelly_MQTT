@@ -42,3 +42,9 @@ Tested and working with:
  - Shelly Plug (relay and power consumption reporting)
  - Shelly2 Switch (relay and roller shutter mode)
  - Shelly4 Pro (relay and power consumption reporting)
+
+
+| PayPal |
+|-------|
+|  [![donate](https://img.shields.io/badge/donate-PayPal-blue.svg)](https://www.paypal.me/rpieasy) |
+If you like this project, or you wants to support the development, you can do that the links above. Or simply send me a Shelly device, that is not already supported, but you wish. :)
