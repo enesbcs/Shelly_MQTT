@@ -27,6 +27,8 @@ Once plugin receive any MQTT message from Shelly it will try to create appropria
 
 ## Plugin update
 
+Warning: if you use this method, Domoticz may duplicate devices after it! Download only plugin.py if you have a lot of shellies and do not want to risk it!
+
 1. Stop domoticz
 2. Go to plugin folder and pull new version
 ```
@@ -41,7 +43,8 @@ Tested and working with:
  - Shelly 1 Open Source (relay)
  - Shelly Plug (relay and power consumption reporting)
  - Shelly2 Switch (relay and roller shutter mode)
- - Shelly4 Pro (relay and power consumption reporting)
+ - Shelly4 Pro (relay and power consumption reporting, positioning)
+ - Shelly H&T
 
 
 | PayPal |
