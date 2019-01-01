@@ -217,7 +217,12 @@ class BasePlugin:
           if "-pos" in unitname:
            try:
             pval = str(message).strip()
-            Devices[iUnit].Update(0,pval)
+            nval = 0
+            if int(pval)>0 and int(pval)<100:
+             nval = 2
+            if int(pval)>99:
+             nval = 1
+            Devices[iUnit].Update(nval,pval)
            except:
             Domoticz.Debug("MQTT message error " + str(topic) + ":"+ str(message))
           else:
@@ -262,7 +267,7 @@ class BasePlugin:
             else:
              Devices[iUnit].Update(0,"Off") 
          # SENSOR type, not command->process
-         elif (len(mqttpath)>3) and (mqttpath[2] == "sensor"):
+         elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['temperature','humidity','battery']) and (("shellysense" in mqttpath[1]) or ("shellyht" in mqttpath[1])):
           unitname = mqttpath[1]+"-sensor"
           unitname = unitname.strip()
           iUnit = -1
@@ -301,14 +306,22 @@ class BasePlugin:
            sval = str(mval)+";"+str(env[1])+";0"
            Devices[iUnit].Update(0,sval)
           elif stype=="humidity":
+           hstat = 0
            try:
             env = curval.split(";")
            except:
             env = [0,0]
            if len(env)<1:
             env.append(0)
-           sval = str(env[0]) + ";"+ str(mval)+";0"
+           if int(mval)>= 50 and int(mval)<=70:
+            hstat = 1
+           elif int(mval)<40:
+            hstat = 2
+           elif int(mval)>70:
+            hstat = 3
+           sval = str(env[0]) + ";"+ str(mval)+";"+str(hstat)
            Devices[iUnit].Update(0,sval)
+
 
 
 global _plugin
