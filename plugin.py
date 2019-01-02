@@ -82,11 +82,21 @@ class BasePlugin:
           self.mqttClient.Publish(mqttpath, scmd)
         # experimental support for v1.4 Percentage poisitioning
         elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="pos":
-          if str(Command).strip().lower()=="set level":
-           pos = str(Level).strip().lower()
+          cmnd = str(Command).strip().lower()
+          pos = str(Level).strip().lower()
+          if ((cmnd=="set level") or (cmnd=="off" and pos!="50")): # percentage requested 
            mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command/pos"
            Domoticz.Debug(mqttpath+" "+str(Command)+" "+str(Level))
            self.mqttClient.Publish(mqttpath, pos)
+          else: # command arrived
+           scmd = ""                      # Translate Domoticz command to Shelly command
+           if cmnd == "off":
+            scmd = "open"
+           elif cmnd == "on":
+            scmd = "close"
+           if scmd != "":
+            mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command"
+            self.mqttClient.Publish(mqttpath, scmd)
 
     def onConnect(self, Connection, Status, Description):
         self.mqttClient.onConnect(Connection, Status, Description)
