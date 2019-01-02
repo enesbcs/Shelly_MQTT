@@ -90,9 +90,9 @@ class BasePlugin:
            self.mqttClient.Publish(mqttpath, pos)
           else: # command arrived
            scmd = ""                      # Translate Domoticz command to Shelly command
-           if cmnd == "off":
+           if cmnd == "on":
             scmd = "open"
-           elif cmnd == "on":
+           elif cmnd == "off":
             scmd = "close"
            if scmd != "":
             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command"
