@@ -73,9 +73,9 @@ class BasePlugin:
          scmd = ""                      # Translate Domoticz command to Shelly command
          if cmd == "stop":
           scmd = "stop"
-         elif cmd == "off":
-          scmd = "open"
          elif cmd == "on":
+          scmd = "open"
+         elif cmd == "off":
           scmd = "close"
          if scmd != "":
           mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command"
@@ -84,7 +84,7 @@ class BasePlugin:
         elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="pos":
           cmnd = str(Command).strip().lower()
           pos = str(Level).strip().lower()
-          if ((cmnd=="set level") or (cmnd=="off" and pos!="50")): # percentage requested 
+          if ((cmnd=="set level") or (cmnd=="off" and pos!="50" and pos!="100")): # percentage requested 
            mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command/pos"
            Domoticz.Debug(mqttpath+" "+str(Command)+" "+str(Level))
            self.mqttClient.Publish(mqttpath, pos)
