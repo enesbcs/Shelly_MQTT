@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.2.0">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.0">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -133,7 +133,7 @@ class BasePlugin:
          topic = str(topic)
          message = str(message)
         except:
-         Domoticz.Debug("MQTT message from " + topic + " message is not a valid string") #if message is not a real string, drop it
+         Domoticz.Debug("MQTT message is not a valid string!") #if message is not a real string, drop it
          return False
         Domoticz.Debug("MQTT message: " + topic + " " + str(message))
         mqttpath = topic.split('/')
@@ -155,7 +155,8 @@ class BasePlugin:
                subval = mqttpath[3].strip()
           elif devtype==2:
                subval = mqttpath[4].strip()
-               unitname=unitname+"-"+subval
+          if subval=="power" or subval=="energy":
+            unitname=mqttpath[1]+"-energy"
           iUnit = -1
           for Device in Devices:
            try:
@@ -175,10 +176,8 @@ class BasePlugin:
              if devtype==0:
               Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="Switch",Used=1,DeviceID=unitname).Create()
              else:
-              if subval=="energy":
-               Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="kWh",Used=1,DeviceID=unitname).Create()
-              elif subval=="power":
-               Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="Usage",Used=1,DeviceID=unitname).Create()
+              if subval=="energy" or subval=="power":
+               Domoticz.Device(Name=unitname, Unit=iUnit,Type=243,Subtype=29,Used=1,DeviceID=unitname).Create()
           if devtype==0:
            scmd = str(message).strip().lower()
            if (str(Devices[iUnit].sValue).lower() != scmd):
@@ -187,15 +186,28 @@ class BasePlugin:
             else:
              Devices[iUnit].Update(0,"Off") 
           else:
-           value = 0
+           curval = Devices[iUnit].sValue
            try:
-            value = float(str(message).strip())
-            if subval=="energy":
-             value = (value/100) # 10*Wh??
-             value = str(value)+";0"
+            prevdata = curval.split(";")
            except:
-            value=str(message).strip()
-           Devices[iUnit].Update(0,str(value))
+            prevdata = []
+           if len(prevdata)<2:
+            prevdata.append(0)
+            prevdata.append(0)
+           try:
+            mval = float(str(message).strip())
+           except:
+            mval = str(message).strip()
+           sval = ""
+           if subval=="power":
+            sval = str(mval)+";"+str(prevdata[1])
+           elif subval=="energy":
+            try:
+             mval2 = (mval/100) # 10*Wh?
+            except:
+             mval2 = str(mval)
+            sval = str(prevdata[0])+";"+str(mval2)
+           Devices[iUnit].Update(0,sval)
           return True
          # ROLLER type, not command->process
          elif (len(mqttpath)>3) and (mqttpath[2] == "roller") and ("/command" not in topic):
@@ -310,10 +322,11 @@ class BasePlugin:
             env = curval.split(";")
            except:
             env = [0,0]
-           if len(env)<2:
+           if len(env)<3:
             env.append(0)
             env.append(0)
-           sval = str(mval)+";"+str(env[1])+";0"
+            env.append(0)
+           sval = str(mval)+";"+str(env[1])+";"+str(env[2])
            Devices[iUnit].Update(0,sval)
           elif stype=="humidity":
            hstat = 0
