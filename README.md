@@ -27,6 +27,7 @@ git clone https://github.com/enesbcs/Shelly_MQTT.git
 2. Restart domoticz
 3. Go to "Hardware" page and add new item with type "ShellyMQTT"
 4. Set your MQTT server address and port to plugin settings
+5. Remember to allow new devices discovery in Domoticz settings
 
 Once plugin receive any MQTT message from Shelly it will try to create appropriate device.
 
