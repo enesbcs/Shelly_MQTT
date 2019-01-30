@@ -41,7 +41,7 @@ class BasePlugin:
 
         self.mqttserveraddress = Parameters["Address"].strip()
         self.mqttserverport = Parameters["Port"].strip()
-        self.mqttClient = MqttClient(self.mqttserveraddress, self.mqttserverport, self.onMQTTConnected, self.onMQTTDisconnected, self.onMQTTPublish, self.onMQTTSubscribed)
+        self.mqttClient = MqttClient(self.mqttserveraddress, self.mqttserverport, "", self.onMQTTConnected, self.onMQTTDisconnected, self.onMQTTPublish, self.onMQTTSubscribed)
 
 
     def checkDevices(self):
@@ -64,9 +64,12 @@ class BasePlugin:
          cmd = Command.strip().lower()
          Domoticz.Debug(mqttpath+" "+cmd)
          if cmd in ["on","off"]:        # commands are simply on or off
-          self.mqttClient.Publish(mqttpath, cmd)
-          if cmd=="off":
-           device.Update(Level,Command) # force device update if it is offline
+          try:
+           self.mqttClient.Publish(mqttpath, cmd)
+           if cmd=="off":
+            device.Update(Level,Command) # force device update if it is offline
+          except Exception as e:
+           Domoticz.Debug(str(e))
         # otherwise check if it is a roller shutter
         elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="roller":
          cmd = Command.strip().lower()
@@ -79,7 +82,10 @@ class BasePlugin:
           scmd = "close"
          if scmd != "":
           mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command"
-          self.mqttClient.Publish(mqttpath, scmd)
+          try:
+           self.mqttClient.Publish(mqttpath, scmd)
+          except Exception as e:
+           Domoticz.Debug(str(e))
         # experimental support for v1.4 Percentage poisitioning
         elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="pos":
           cmnd = str(Command).strip().lower()
@@ -87,7 +93,10 @@ class BasePlugin:
           if ((cmnd=="set level") or (cmnd=="off" and pos!="50" and pos!="100")): # percentage requested 
            mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command/pos"
            Domoticz.Debug(mqttpath+" "+str(Command)+" "+str(Level))
-           self.mqttClient.Publish(mqttpath, pos)
+           try:
+            self.mqttClient.Publish(mqttpath, pos)
+           except Exception as e:
+            Domoticz.Debug(str(e))
           else: # command arrived
            scmd = ""                      # Translate Domoticz command to Shelly command
            if cmnd == "on":
@@ -96,7 +105,10 @@ class BasePlugin:
             scmd = "close"
            if scmd != "":
             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command"
-            self.mqttClient.Publish(mqttpath, scmd)
+            try:
+             self.mqttClient.Publish(mqttpath, scmd)
+            except Exception as e:
+             Domoticz.Debug(str(e))
 
     def onConnect(self, Connection, Status, Description):
         self.mqttClient.onConnect(Connection, Status, Description)
@@ -166,6 +178,7 @@ class BasePlugin:
            except:
             pass
           if iUnit<0: # if device does not exists in Domoticz, than create it
+            try:
              iUnit = 0
              for x in range(1,256):
               if x not in Devices:
@@ -178,6 +191,9 @@ class BasePlugin:
              else:
               if subval=="energy" or subval=="power":
                Domoticz.Device(Name=unitname, Unit=iUnit,Type=243,Subtype=29,Used=1,DeviceID=unitname).Create()
+            except Exception as e:
+             Domoticz.Debug(str(e))
+             return False
           if devtype==0:
            scmd = str(message).strip().lower()
            if (str(Devices[iUnit].sValue).lower() != scmd):
@@ -225,6 +241,7 @@ class BasePlugin:
            except:
             pass
           if iUnit<0: # if device does not exists in Domoticz, than create it
+            try:
              iUnit = 0
              for x in range(1,256):
               if x not in Devices:
@@ -236,6 +253,9 @@ class BasePlugin:
               Domoticz.Device(Name=unitname, Unit=iUnit,Type=244, Subtype=62, Switchtype=13,Used=1,DeviceID=unitname).Create() # create Blinds Percentage
              else:
               Domoticz.Device(Name=unitname, Unit=iUnit,Type=244, Subtype=62, Switchtype=15,Used=1,DeviceID=unitname).Create() # create Venetian Blinds EU type
+            except Exception as e:
+             Domoticz.Debug(str(e))
+             return False
           if "-pos" in unitname:
            try:
             pval = str(message).strip()
@@ -271,6 +291,7 @@ class BasePlugin:
            except:
             pass
           if iUnit<0: # if device does not exists in Domoticz, than create it
+            try:
              iUnit = 0
              for x in range(1,256):
               if x not in Devices:
@@ -279,6 +300,9 @@ class BasePlugin:
              if iUnit==0:
               iUnit=len(Devices)+1
              Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="Switch",Used=1,DeviceID=unitname).Create()
+            except Exception as e:
+             Domoticz.Debug(str(e))
+             return False
           if str(message).lower=="on" or str(message)=="1":
            scmd = "on"
           else:
@@ -301,6 +325,7 @@ class BasePlugin:
            except:
             pass
           if iUnit<0: # if device does not exists in Domoticz, than create it
+            try:
              iUnit = 0
              for x in range(1,256):
               if x not in Devices:
@@ -309,6 +334,9 @@ class BasePlugin:
              if iUnit==0:
               iUnit=len(Devices)+1
              Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Temp+Hum",Used=1,DeviceID=unitname).Create() # create Temp+Hum Type=82
+            except Exception as e:
+             Domoticz.Debug(str(e))
+             return False
           stype = mqttpath[3].strip().lower()
           curval = Devices[iUnit].sValue
           try:
