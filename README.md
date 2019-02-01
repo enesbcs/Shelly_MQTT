@@ -51,3 +51,5 @@ Tested and working with:
  - Shelly2 Switch (relay and roller shutter mode, positioning)
  - Shelly4 Pro (relay and power consumption reporting)
  - Shelly H&T
+
+**I would like to thank [Allterco Robotics](https://allterco.com/en/Shelly) for providing me with samples of Shelly Plug/Shelly2/Shelly4 to support the development of this plugin.**
