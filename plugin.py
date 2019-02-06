@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.0">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.1">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -52,8 +52,12 @@ class BasePlugin:
 
     def onCommand(self, Unit, Command, Level, Color):  # react to commands arrived from Domoticz
         Domoticz.Debug("Command: " + Command + " (" + str(Level) + ") Color:" + Color)
-        device = Devices[Unit]
-        device_id = device.DeviceID.split('-')
+        try:
+         device = Devices[Unit]
+         device_id = device.DeviceID.split('-')
+        except Exception as e:
+         Domoticz.Debug(str(e))
+         return False
         relnum = -1
         try:
          relnum = int(device_id[2].strip())
@@ -67,7 +71,7 @@ class BasePlugin:
           try:
            self.mqttClient.Publish(mqttpath, cmd)
            if cmd=="off":
-            device.Update(Level,Command) # force device update if it is offline
+            device.Update(nValue=int(Level),sValue=str(Command)) # force device update if it is offline
           except Exception as e:
            Domoticz.Debug(str(e))
         # otherwise check if it is a roller shutter
@@ -195,15 +199,19 @@ class BasePlugin:
              Domoticz.Debug(str(e))
              return False
           if devtype==0:
-           scmd = str(message).strip().lower()
-           if (str(Devices[iUnit].sValue).lower() != scmd):
-            if (scmd == "on"): # set device status if needed
-             Devices[iUnit].Update(1,"On") 
-            else:
-             Devices[iUnit].Update(0,"Off") 
-          else:
-           curval = Devices[iUnit].sValue
            try:
+            scmd = str(message).strip().lower()
+            if (str(Devices[iUnit].sValue).lower() != scmd):
+             if (scmd == "on"): # set device status if needed
+              Devices[iUnit].Update(nValue=1,sValue="On")
+             else:
+              Devices[iUnit].Update(nValue=0,sValue="Off")
+           except Exception as e:
+            Domoticz.Debug(str(e))
+            return False
+          else:
+           try:
+            curval = Devices[iUnit].sValue
             prevdata = curval.split(";")
            except:
             prevdata = []
@@ -223,7 +231,10 @@ class BasePlugin:
             except:
              mval2 = str(mval)
             sval = str(prevdata[0])+";"+str(mval2)
-           Devices[iUnit].Update(0,sval)
+           try:
+            Devices[iUnit].Update(nValue=0,sValue=str(sval))
+           except Exception as e:
+            Domoticz.Debug(str(e))
           return True
          # ROLLER type, not command->process
          elif (len(mqttpath)>3) and (mqttpath[2] == "roller") and ("/command" not in topic):
@@ -264,20 +275,24 @@ class BasePlugin:
              nval = 2
             if int(pval)>99:
              nval = 1
-            Devices[iUnit].Update(nval,pval)
+            Devices[iUnit].Update(nValue=int(nval),sValue=str(pval))
            except:
             Domoticz.Debug("MQTT message error " + str(topic) + ":"+ str(message))
           else:
-           bcmd = str(message).strip().lower()
-           if bcmd == "stop" and str(Devices[iUnit].sValue).lower() !="stop":
-            Devices[iUnit].Update(17,"Stop") # stop
-            return True
-           elif bcmd == "open" and str(Devices[iUnit].sValue).lower() !="off":
-            Devices[iUnit].Update(0,"Off") # open
-            return True
-           elif bcmd == "close" and str(Devices[iUnit].sValue).lower() !="on":
-            Devices[iUnit].Update(1,"On")  # close
-            return True
+           try:
+            bcmd = str(message).strip().lower()
+            if bcmd == "stop" and str(Devices[iUnit].sValue).lower() !="stop":
+             Devices[iUnit].Update(nValue=17,sValue="Stop") # stop
+             return True
+            elif bcmd == "open" and str(Devices[iUnit].sValue).lower() !="off":
+             Devices[iUnit].Update(nValue=0,sValue="Off") # open
+             return True
+            elif bcmd == "close" and str(Devices[iUnit].sValue).lower() !="on":
+             Devices[iUnit].Update(nValue=1,sValue="On")  # close
+             return True
+           except Exception as e:
+            Domoticz.Debug(str(e))
+            return False
          # INPUT type, not command->process
          elif (len(mqttpath)>3) and (mqttpath[2] == "input") and (mqttpath[len(mqttpath)-1]!="command"):
           unitname = mqttpath[1]+"-"+mqttpath[3]+"-input"
@@ -299,19 +314,24 @@ class BasePlugin:
                break
              if iUnit==0:
               iUnit=len(Devices)+1
-             Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="Switch",Used=1,DeviceID=unitname).Create()
+             Domoticz.Device(Name=unitname+" BUTTON", Unit=iUnit,TypeName="Switch",Used=0,DeviceID=unitname).Create()
             except Exception as e:
              Domoticz.Debug(str(e))
              return False
-          if str(message).lower=="on" or str(message)=="1":
-           scmd = "on"
-          else:
-           scmd = "off"
-          if (str(Devices[iUnit].sValue).lower() != scmd):
+          try:
+           if str(message).lower=="on" or str(message)=="1":
+            scmd = "on"
+           else:
+            scmd = "off"
+           if (str(Devices[iUnit].sValue).lower() != scmd):
             if (scmd == "on"): # set device status if needed
-             Devices[iUnit].Update(1,"On") 
+             Devices[iUnit].Update(nValue=1,sValue="On")
             else:
-             Devices[iUnit].Update(0,"Off") 
+             Devices[iUnit].Update(nValue=0,sValue="Off")
+          except Exception as e:
+           Domoticz.Debug(str(e))
+           return False
+          return True
          # SENSOR type, not command->process
          elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['temperature','humidity','battery']) and (("shellysense" in mqttpath[1]) or ("shellyht" in mqttpath[1])):
           unitname = mqttpath[1]+"-sensor"
@@ -338,13 +358,19 @@ class BasePlugin:
              Domoticz.Debug(str(e))
              return False
           stype = mqttpath[3].strip().lower()
-          curval = Devices[iUnit].sValue
+          try:
+           curval = Devices[iUnit].sValue
+          except:
+           curval = 0
           try:
            mval = float(message)
           except:
            mval = str(message).strip()
           if stype=="battery":
-           Devices[iUnit].Update(0,curval,BatteryLevel=int(mval))
+           try:
+            Devices[iUnit].Update(nValue=0,sValue=str(curval),BatteryLevel=int(mval))
+           except Exception as e:
+            Domoticz.Debug(str(e))
           elif stype=="temperature":
            try:
             env = curval.split(";")
@@ -355,7 +381,10 @@ class BasePlugin:
             env.append(0)
             env.append(0)
            sval = str(mval)+";"+str(env[1])+";"+str(env[2])
-           Devices[iUnit].Update(0,sval)
+           try:
+            Devices[iUnit].Update(nValue=0,sValue=str(sval))
+           except Exception as e:
+            Domoticz.Debug(str(e))
           elif stype=="humidity":
            hstat = 0
            try:
@@ -371,9 +400,10 @@ class BasePlugin:
            elif int(mval)>70:
             hstat = 3
            sval = str(env[0]) + ";"+ str(mval)+";"+str(hstat)
-           Devices[iUnit].Update(0,sval)
-
-
+           try:
+            Devices[iUnit].Update(nValue=0,sValue=str(sval))
+           except Exception as e:
+            Domoticz.Debug(str(e))
 
 global _plugin
 _plugin = BasePlugin()
