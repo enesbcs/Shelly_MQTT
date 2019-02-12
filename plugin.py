@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.1">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.2">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -24,24 +24,27 @@ import Domoticz
 import json
 import time
 import re
-from mqtt import MqttClient
+try:
+ from mqtt import MqttClient
+except Exception as e:
+ Domoticz.Debug("MQTT client import error: "+str(e))
 
 class BasePlugin:
     mqttClient = None
 
     def onStart(self):
+      try:
         self.debugging = Parameters["Mode6"]
-        
         if self.debugging == "Verbose":
             Domoticz.Debugging(2+4+8+16+64)
         if self.debugging == "Debug":
             Domoticz.Debugging(2)
-
         self.base_topic = "shellies" # hardwired
-
         self.mqttserveraddress = Parameters["Address"].strip()
         self.mqttserverport = Parameters["Port"].strip()
         self.mqttClient = MqttClient(self.mqttserveraddress, self.mqttserverport, "", self.onMQTTConnected, self.onMQTTDisconnected, self.onMQTTPublish, self.onMQTTSubscribed)
+      except Exception as e:
+        Domoticz.Debug("MQTT client start error: "+str(e))
 
 
     def checkDevices(self):
@@ -51,6 +54,8 @@ class BasePlugin:
         Domoticz.Debug("onStop called")
 
     def onCommand(self, Unit, Command, Level, Color):  # react to commands arrived from Domoticz
+        if self.mqttClient is None:
+         return False
         Domoticz.Debug("Command: " + Command + " (" + str(Level) + ") Color:" + Color)
         try:
          device = Devices[Unit]
@@ -115,12 +120,15 @@ class BasePlugin:
              Domoticz.Debug(str(e))
 
     def onConnect(self, Connection, Status, Description):
+       if self.mqttClient is not None:
         self.mqttClient.onConnect(Connection, Status, Description)
 
     def onDisconnect(self, Connection):
+       if self.mqttClient is not None:
         self.mqttClient.onDisconnect(Connection)
 
     def onMessage(self, Connection, Data):
+       if self.mqttClient is not None:
         self.mqttClient.onMessage(Connection, Data)
 
     def onHeartbeat(self):
@@ -134,6 +142,7 @@ class BasePlugin:
             self.mqttClient.Ping()
 
     def onMQTTConnected(self):
+       if self.mqttClient is not None:
         self.mqttClient.Subscribe([self.base_topic + '/#'])
 
     def onMQTTDisconnected(self):
@@ -415,7 +424,7 @@ def onStart():
 def onStop():
     global _plugin
     _plugin.onStop()
-    
+
 def onConnect(Connection, Status, Description):
     global _plugin
     _plugin.onConnect(Connection, Status, Description)
