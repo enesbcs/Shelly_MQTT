@@ -34,6 +34,7 @@ class BasePlugin:
 
     def onStart(self):
       try:
+        Domoticz.Heartbeat(10)
         self.debugging = Parameters["Mode6"]
         if self.debugging == "Verbose":
             Domoticz.Debugging(2+4+8+16+64)
