@@ -5,7 +5,7 @@ import json
 import random
 
 
-class MqttClient:
+class MqttClientSH:
     Address = ""
     Port = ""
     mqttConn = None
@@ -16,10 +16,13 @@ class MqttClient:
 
     def __init__(self, destination, port, clientId, mqttConnectedCb, mqttDisconnectedCb, mqttPublishCb, mqttSubackCb):
         Domoticz.Debug("MqttClient::__init__")
-        
+
         self.address = destination
         self.port = port
-        self.client_id = clientId if clientId != "" else 'Domoticz_'+str(int(time.time()))+'_'+str(random.randint(1000, 9999))
+        if clientId != "":
+         self.client_id = clientId
+        else:
+         self.client_id = 'Domoticz_'+str(int(time.time()))+'_'+str(random.randint(1000, 9999))
         self.mqttConnectedCb = mqttConnectedCb
         self.mqttDisconnectedCb = mqttDisconnectedCb
         self.mqttPublishCb = mqttPublishCb

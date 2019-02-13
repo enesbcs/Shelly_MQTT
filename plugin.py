@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.2">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.3">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -20,19 +20,37 @@
     </params>
 </plugin>
 """
-import Domoticz
-import json
-import time
-import re
+errmsg = ""
 try:
- from mqtt import MqttClient
+ import Domoticz
 except Exception as e:
- Domoticz.Debug("MQTT client import error: "+str(e))
+ errmsg += "Domoticz core start error: "+str(e)
+try:
+ import json
+except Exception as e:
+ errmsg += " Json import error: "+str(e)
+try:
+ import time
+except Exception as e:
+ errmsg += " time import error: "+str(e)
+try:
+ import re
+except Exception as e:
+ errmsg += " re import error: "+str(e)
+try:
+ from mqtt import MqttClientSH
+except Exception as e:
+ errmsg += " MQTT client import error: "+str(e)
 
 class BasePlugin:
     mqttClient = None
 
+    def __init__(self):
+     return
+
     def onStart(self):
+     global errmsg
+     if errmsg =="":
       try:
         Domoticz.Heartbeat(10)
         self.debugging = Parameters["Mode6"]
@@ -43,10 +61,13 @@ class BasePlugin:
         self.base_topic = "shellies" # hardwired
         self.mqttserveraddress = Parameters["Address"].strip()
         self.mqttserverport = Parameters["Port"].strip()
-        self.mqttClient = MqttClient(self.mqttserveraddress, self.mqttserverport, "", self.onMQTTConnected, self.onMQTTDisconnected, self.onMQTTPublish, self.onMQTTSubscribed)
+        self.mqttClient = MqttClientSH(self.mqttserveraddress, self.mqttserverport, "", self.onMQTTConnected, self.onMQTTDisconnected, self.onMQTTPublish, self.onMQTTSubscribed)
       except Exception as e:
-        Domoticz.Debug("MQTT client start error: "+str(e))
-
+        Domoticz.Error("MQTT client start error: "+str(e))
+        self.mqttClient = None
+     else:
+        Domoticz.Error("Your Domoticz Python environment is not functional! "+errmsg)
+        self.mqttClient = None
 
     def checkDevices(self):
         Domoticz.Debug("checkDevices called")
@@ -133,14 +154,17 @@ class BasePlugin:
         self.mqttClient.onMessage(Connection, Data)
 
     def onHeartbeat(self):
-        Domoticz.Debug("Heartbeating...")
-
+      Domoticz.Debug("Heartbeating...")
+      if self.mqttClient is not None:
+       try:
         # Reconnect if connection has dropped
         if self.mqttClient.mqttConn is None or (not self.mqttClient.mqttConn.Connecting() and not self.mqttClient.mqttConn.Connected() or not self.mqttClient.isConnected):
             Domoticz.Debug("Reconnecting")
             self.mqttClient.Open()
         else:
             self.mqttClient.Ping()
+       except Exception as e:
+        Domoticz.Error(str(e))
 
     def onMQTTConnected(self):
        if self.mqttClient is not None:
