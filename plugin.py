@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.3">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.5">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -38,7 +38,7 @@ try:
 except Exception as e:
  errmsg += " re import error: "+str(e)
 try:
- from mqtt import MqttClientSH
+ from mqtt import MqttClientSH2
 except Exception as e:
  errmsg += " MQTT client import error: "+str(e)
 
@@ -61,7 +61,7 @@ class BasePlugin:
         self.base_topic = "shellies" # hardwired
         self.mqttserveraddress = Parameters["Address"].strip()
         self.mqttserverport = Parameters["Port"].strip()
-        self.mqttClient = MqttClientSH(self.mqttserveraddress, self.mqttserverport, "", self.onMQTTConnected, self.onMQTTDisconnected, self.onMQTTPublish, self.onMQTTSubscribed)
+        self.mqttClient = MqttClientSH2(self.mqttserveraddress, self.mqttserverport, "", self.onMQTTConnected, self.onMQTTDisconnected, self.onMQTTPublish, self.onMQTTSubscribed)
       except Exception as e:
         Domoticz.Error("MQTT client start error: "+str(e))
         self.mqttClient = None
@@ -96,7 +96,7 @@ class BasePlugin:
          Domoticz.Debug(mqttpath+" "+cmd)
          if cmd in ["on","off"]:        # commands are simply on or off
           try:
-           self.mqttClient.Publish(mqttpath, cmd)
+           self.mqttClient.publish(mqttpath, cmd)
            if cmd=="off":
             device.Update(nValue=int(Level),sValue=str(Command)) # force device update if it is offline
           except Exception as e:
@@ -114,7 +114,7 @@ class BasePlugin:
          if scmd != "":
           mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command"
           try:
-           self.mqttClient.Publish(mqttpath, scmd)
+           self.mqttClient.publish(mqttpath, scmd)
           except Exception as e:
            Domoticz.Debug(str(e))
         # experimental support for v1.4 Percentage poisitioning
@@ -125,7 +125,7 @@ class BasePlugin:
            mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command/pos"
            Domoticz.Debug(mqttpath+" "+str(Command)+" "+str(Level))
            try:
-            self.mqttClient.Publish(mqttpath, pos)
+            self.mqttClient.publish(mqttpath, pos)
            except Exception as e:
             Domoticz.Debug(str(e))
           else: # command arrived
@@ -137,7 +137,55 @@ class BasePlugin:
            if scmd != "":
             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command"
             try:
-             self.mqttClient.Publish(mqttpath, scmd)
+             self.mqttClient.publish(mqttpath, scmd)
+            except Exception as e:
+             Domoticz.Debug(str(e))
+        # RGB device
+        elif relnum in range(0,3) and len(device_id)==4 and device_id[len(device_id)-1] in ["rgb","w"]:
+         if (Command == "Set Level"):
+            mqttpath = ""
+            if int(Level)>0:
+              amode = "on"
+            else:
+              amode = "off"
+            if device_id[3]=="rgb":
+             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/color/"+device_id[2]+"/set"
+             scmd = '{"turn":"'+amode+'","mode":"color","gain":'+str(Level)+'}'
+            else:
+             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/white/"+device_id[2]+"/set"
+             scmd = '{"turn":"'+amode+'","brightness":'+str(Level)+'}'
+            Domoticz.Debug('RGB Level:' + scmd)
+            if mqttpath:
+             try:
+              self.mqttClient.publish(mqttpath, scmd)
+             except Exception as e:
+              Domoticz.Debug(str(e))
+         elif (Command == "Set Color"):
+          try:
+           color = json.loads(Color)
+          except Exception as e:
+           Domoticz.Debug(str(e))
+          if len(color)>0:
+            if device_id[3]=="rgb":
+             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/color/"+device_id[2]+"/set"
+             scmd = '{"turn":"on","mode":"color","red":'+str(color["r"])+',"green":'+str(color["g"])+',"blue":'+str(color["b"]) +',"white":'+str(color["cw"])+'}'
+             Domoticz.Debug('RGB Color:' + scmd)
+             try:
+              self.mqttClient.publish(mqttpath, scmd)
+             except Exception as e:
+              Domoticz.Debug(str(e))
+         else:
+           if device_id[3]=="rgb":
+             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/color/"+device_id[2]+"/set"
+           else:
+             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/white/"+device_id[2]+"/set"
+           cmd = Command.strip().lower()
+           if cmd in ["on","off"]:        # commands are simply on or off
+            scmd = '{"turn":"'+str(cmd)+'"}'
+            try:
+             self.mqttClient.publish(mqttpath, scmd)
+             if cmd=="off":
+              device.Update(nValue=int(Level),sValue=str(Command)) # force device update if it is offline
             except Exception as e:
              Domoticz.Debug(str(e))
 
@@ -158,17 +206,17 @@ class BasePlugin:
       if self.mqttClient is not None:
        try:
         # Reconnect if connection has dropped
-        if self.mqttClient.mqttConn is None or (not self.mqttClient.mqttConn.Connecting() and not self.mqttClient.mqttConn.Connected() or not self.mqttClient.isConnected):
+        if (self.mqttClient._connection is None) or (not self.mqttClient.isConnected):
             Domoticz.Debug("Reconnecting")
-            self.mqttClient.Open()
+            self.mqttClient._open()
         else:
-            self.mqttClient.Ping()
+            self.mqttClient.ping()
        except Exception as e:
         Domoticz.Error(str(e))
 
     def onMQTTConnected(self):
        if self.mqttClient is not None:
-        self.mqttClient.Subscribe([self.base_topic + '/#'])
+        self.mqttClient.subscribe([self.base_topic + '/#'])
 
     def onMQTTDisconnected(self):
         Domoticz.Debug("onMQTTDisconnected")
@@ -438,6 +486,79 @@ class BasePlugin:
             Devices[iUnit].Update(nValue=0,sValue=str(sval))
            except Exception as e:
             Domoticz.Debug(str(e))
+         # RGB type, not command->process
+         elif (len(mqttpath)>3) and ((mqttpath[2] == "color") or (mqttpath[2] == "white")) and ("/command" not in topic) and ("/set" not in topic):
+          unitname = mqttpath[1]+"-"+mqttpath[3]
+          if (mqttpath[2] == "white"):
+           unitname = unitname+"-w"
+          else:
+           unitname = unitname+"-rgb"
+          unitname = unitname.strip()
+          iUnit = -1
+          for Device in Devices:
+           try:
+            if (Devices[Device].DeviceID.strip() == unitname):
+             iUnit = Device
+             break
+           except:
+            pass
+          if iUnit<0: # if device does not exists in Domoticz, than create it
+            try:
+             iUnit = 0
+             for x in range(1,256):
+              if x not in Devices:
+               iUnit=x
+               break
+             if iUnit==0:
+              iUnit=len(Devices)+1
+             if (mqttpath[2] == "white"):
+              Domoticz.Device(Name=unitname, Unit=iUnit,Type=241, Subtype=3, Switchtype=7, Used=1,DeviceID=unitname).Create() # create Color White device
+             else:
+              Domoticz.Device(Name=unitname, Unit=iUnit,Type=241, Subtype=6, Switchtype=7, Used=1,DeviceID=unitname).Create() # create RGBZW device
+            except Exception as e:
+             Domoticz.Debug(str(e))
+             return False
+          tmsg = str(message).strip()
+          if "{" in tmsg:
+           tmsg = tmsg.replace("'",'"').lower() # OMG replace single quotes and non-standard upper case letters
+           try:
+            jmsg = json.loads(tmsg)
+           except Exception as e:
+            Domoticz.Debug(str(e))
+            jmsg = []
+           if jmsg:
+            status = 0
+            if "ison" in jmsg:
+              if str(jmsg["ison"])=="on" or str(jmsg["ison"])=="1" or jmsg["ison"]==True:
+               status = 1
+            elif "turn" in jmsg:
+             if jmsg["turn"]=="on" or jmsg["turn"]=="1" or jmsg["turn"]==True:
+              status = 1
+            if "red" in jmsg: # rgbw
+             color = {}
+             color["m"] = 4
+             color["t"] = 0
+             color["ww"] = 0
+             color["r"] = int(jmsg["red"])
+             color["g"] = int(jmsg["green"])
+             color["b"] = int(jmsg["blue"])
+             color["cw"] = int(jmsg["white"])
+             dimmer = str(jmsg["gain"])
+             if (Devices[iUnit].nValue != status or Devices[iUnit].sValue != dimmer or json.loads(Devices[iUnit].Color) != color):
+              jColor = json.dumps(color)
+              Domoticz.Debug('Updating device #' + str(Devices[iUnit].ID))
+              Domoticz.Debug('nValue: ' + str(Devices[iUnit].nValue) + ' -> ' + str(status))
+              Domoticz.Debug('sValue: ' + Devices[iUnit].sValue + ' -> ' + dimmer)
+              Domoticz.Debug('Color: ' + Devices[iUnit].Color + ' -> ' + jColor)
+              Devices[iUnit].Update(nValue=status, sValue=dimmer, Color=jColor)
+            else: # white
+             dimmer = str(jmsg["brightness"])
+             Domoticz.Debug('Updating device #' + str(Devices[iUnit].ID))
+             Domoticz.Debug('nValue: ' + str(Devices[iUnit].nValue) + ' -> ' + str(status))
+             Domoticz.Debug('sValue: ' + Devices[iUnit].sValue + ' -> ' + dimmer)
+             Devices[iUnit].Update(nValue=status, sValue=dimmer)
+
+          return True
 
 global _plugin
 _plugin = BasePlugin()
