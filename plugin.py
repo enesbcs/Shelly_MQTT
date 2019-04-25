@@ -10,6 +10,13 @@
         <param field="Username" label="Username" width="300px"/>
         <param field="Password" label="Password" width="300px" default="" password="true"/>
 
+        <param field="Mode1" label="Invert Roller mode globally" width="75px">
+            <options>
+                <option label="True" value="1"/>
+                <option label="False" value="0" default="true" />
+            </options>
+        </param>
+
         <param field="Mode6" label="Debug" width="75px">
             <options>
                 <option label="Verbose" value="Verbose"/>
@@ -105,12 +112,20 @@ class BasePlugin:
         elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="roller":
          cmd = Command.strip().lower()
          scmd = ""                      # Translate Domoticz command to Shelly command
-         if cmd == "stop":
-          scmd = "stop"
-         elif cmd == "on":
-          scmd = "open"
-         elif cmd == "off":
-          scmd = "close"
+         if str(Parameters["Mode1"])=="1": # check if global inversion requested
+          if cmd == "stop":
+           scmd = "stop"
+          elif cmd == "on":
+           scmd = "close"
+          elif cmd == "off":
+           scmd = "open"
+         else:
+          if cmd == "stop":
+           scmd = "stop"
+          elif cmd == "on":
+           scmd = "open"
+          elif cmd == "off":
+           scmd = "close"
          if scmd != "":
           mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command"
           try:
@@ -130,10 +145,16 @@ class BasePlugin:
             Domoticz.Debug(str(e))
           else: # command arrived
            scmd = ""                      # Translate Domoticz command to Shelly command
-           if cmnd == "on":
-            scmd = "open"
-           elif cmnd == "off":
-            scmd = "close"
+           if str(Parameters["Mode1"])=="1": # check if global inversion requested
+            if cmnd == "on":
+             scmd = "close"
+            elif cmnd == "off":
+             scmd = "open"
+           else:
+            if cmnd == "on":
+             scmd = "open"
+            elif cmnd == "off":
+             scmd = "close"
            if scmd != "":
             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command"
             try:
