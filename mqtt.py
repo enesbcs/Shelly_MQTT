@@ -8,8 +8,10 @@
 import Domoticz
 import time
 import json
-import random
-
+try:
+ import random
+except:
+ Domoticz.Debug("Your Python environment is incomplete!")
 
 class MqttClientSH2:
     address = ""
@@ -42,7 +44,10 @@ class MqttClientSH2:
             return "None"
 
     def _generate_mqtt_client_id(self):
+       try:
         return 'Domoticz_' + str(int(time.time()))+'_'+str(random.randint(1000, 9999))
+       except:
+        return 'Domoticz_' + str(int(time.time()))
 
     def _open(self):
         Domoticz.Debug("MqttClient::open")

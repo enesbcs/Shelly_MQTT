@@ -262,6 +262,7 @@ class BasePlugin:
           unitname = mqttpath[1]+"-"+mqttpath[3]
           unitname = unitname.strip()
           devtype = 1
+          funcid = -1
           try:
            funcid = int(mqttpath[3].strip())
            devtype=0
@@ -275,7 +276,10 @@ class BasePlugin:
           elif devtype==2:
                subval = mqttpath[4].strip()
           if subval=="power" or subval=="energy":
-            unitname=mqttpath[1]+"-energy"
+           if funcid in [0,1,2,3]:
+            unitname=mqttpath[1]+"-"+str(funcid)+"-energy" # fix 2.5 and 4pro support
+           else:
+            unitname=mqttpath[1]+"-energy" # shelly2
           iUnit = -1
           for Device in Devices:
            try:
@@ -418,6 +422,45 @@ class BasePlugin:
              if iUnit==0:
               iUnit=len(Devices)+1
              Domoticz.Device(Name=unitname+" BUTTON", Unit=iUnit,TypeName="Switch",Used=0,DeviceID=unitname).Create()
+            except Exception as e:
+             Domoticz.Debug(str(e))
+             return False
+          try:
+           if str(message).lower=="on" or str(message)=="1":
+            scmd = "on"
+           else:
+            scmd = "off"
+           if (str(Devices[iUnit].sValue).lower() != scmd):
+            if (scmd == "on"): # set device status if needed
+             Devices[iUnit].Update(nValue=1,sValue="On")
+            else:
+             Devices[iUnit].Update(nValue=0,sValue="Off")
+          except Exception as e:
+           Domoticz.Debug(str(e))
+           return False
+          return True
+         # LONGPUSH type, not command->process
+         elif (len(mqttpath)>3) and (mqttpath[2] == "longpush") and (mqttpath[len(mqttpath)-1]!="command"):
+          unitname = mqttpath[1]+"-"+mqttpath[3]+"-lpush"
+          unitname = unitname.strip()
+          iUnit = -1
+          for Device in Devices:
+           try:
+            if (Devices[Device].DeviceID.strip() == unitname):
+             iUnit = Device
+             break
+           except:
+            pass
+          if iUnit<0: # if device does not exists in Domoticz, than create it
+            try:
+             iUnit = 0
+             for x in range(1,256):
+              if x not in Devices:
+               iUnit=x
+               break
+             if iUnit==0:
+              iUnit=len(Devices)+1
+             Domoticz.Device(Name=unitname+" LONGPUSH", Unit=iUnit,TypeName="Switch",Used=0,DeviceID=unitname).Create()
             except Exception as e:
              Domoticz.Debug(str(e))
              return False
