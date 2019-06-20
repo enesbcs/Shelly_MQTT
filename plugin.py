@@ -112,7 +112,7 @@ class BasePlugin:
         elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="roller":
          cmd = Command.strip().lower()
          scmd = ""                      # Translate Domoticz command to Shelly command
-         if str(Parameters["Mode1"])=="1": # check if global inversion requested
+         if str(Parameters["Mode1"])!="1": # check if global inversion requested
           if cmd == "stop":
            scmd = "stop"
           elif cmd == "on":
@@ -135,8 +135,8 @@ class BasePlugin:
         # experimental support for v1.4 Percentage poisitioning
         elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="pos":
           cmnd = str(Command).strip().lower()
-          pos = str(Level).strip().lower()
           if (cmnd=="set level"): # percentage requested 
+           pos = str(100-Level).strip().lower()
            mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command/pos"
            Domoticz.Debug(mqttpath+" "+str(Command)+" "+str(Level))
            try:
@@ -145,7 +145,7 @@ class BasePlugin:
             Domoticz.Debug(str(e))
           else: # command arrived
            scmd = ""                      # Translate Domoticz command to Shelly command
-           if str(Parameters["Mode1"])=="1": # check if global inversion requested
+           if str(Parameters["Mode1"])!="1": # check if global inversion requested
             if cmnd == "on":
              scmd = "close"
             elif cmnd == "off":
@@ -376,11 +376,11 @@ class BasePlugin:
              return False
           if "-pos" in unitname:
            try:
-            pval = str(message).strip()
+            pval = 100-int(str(message).strip())
             nval = 0
-            if int(pval)>0 and int(pval)<100:
+            if pval>0 and pval<100:
              nval = 2
-            if int(pval)>99:
+            if pval>99:
              nval = 1
             Devices[iUnit].Update(nValue=int(nval),sValue=str(pval))
            except:
