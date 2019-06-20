@@ -88,17 +88,19 @@ class BasePlugin:
         Domoticz.Debug("Command: " + Command + " (" + str(Level) + ") Color:" + Color)
         try:
          device = Devices[Unit]
-         device_id = device.DeviceID.split('-')
+         devname = device.DeviceID.replace("shellyplug-s","shellyplugs",1) # ugly fix for ShellyPlug-S "-"
+         device_id = devname.split('-') # get device name from DeviceID field
         except Exception as e:
          Domoticz.Debug(str(e))
          return False
         relnum = -1
         try:
-         relnum = int(device_id[2].strip())
+         relnum = int(device_id[2].strip()) # get channel if applicable
         except:
          relnum = -1
+        device_id[0] = device_id[0].replace("shellyplugs","shellyplug-s",1) # ugly fix for ShellyPlug-S "-"
         if relnum in range(0,4) and len(device_id)==3: # check if is it a normal relay
-         mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/relay/"+device_id[2]+"/command"
+         mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/relay/"+device_id[2]+"/command" # reconstrutct necessarry mqtt path
          cmd = Command.strip().lower()
          Domoticz.Debug(mqttpath+" "+cmd)
          if cmd in ["on","off"]:        # commands are simply on or off
@@ -132,7 +134,7 @@ class BasePlugin:
            self.mqttClient.publish(mqttpath, scmd)
           except Exception as e:
            Domoticz.Debug(str(e))
-        # experimental support for v1.4 Percentage poisitioning
+        # support for v1.4 Percentage poisitioning
         elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="pos":
           cmnd = str(Command).strip().lower()
           if (cmnd=="set level"): # percentage requested 
@@ -478,7 +480,7 @@ class BasePlugin:
            Domoticz.Debug(str(e))
            return False
           return True
-         # SENSOR type, not command->process
+         # SENSOR type, not command->process ShellySense and ShellyHT
          elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['temperature','humidity','battery']) and (("shellysense" in mqttpath[1]) or ("shellyht" in mqttpath[1])):
           unitname = mqttpath[1]+"-sensor"
           unitname = unitname.strip()
@@ -549,6 +551,39 @@ class BasePlugin:
            try:
             Devices[iUnit].Update(nValue=0,sValue=str(sval))
            except Exception as e:
+            Domoticz.Debug(str(e))
+         # SENSOR type, not command->process - device inside temperature!
+         elif (len(mqttpath)==3) and (mqttpath[2] == "temperature"):
+          unitname = mqttpath[1]+"-temp"
+          unitname = unitname.strip()
+          iUnit = -1
+          for Device in Devices:
+           try:
+            if (Devices[Device].DeviceID.strip() == unitname):
+             iUnit = Device
+             break
+           except:
+            pass
+          if iUnit<0: # if device does not exists in Domoticz, than create it
+            try:
+             iUnit = 0
+             for x in range(1,256):
+              if x not in Devices:
+               iUnit=x
+               break
+             if iUnit==0:
+              iUnit=len(Devices)+1
+             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Temperature",Used=1,DeviceID=unitname).Create()
+            except Exception as e:
+             Domoticz.Debug(str(e))
+             return False
+          try:
+           mval = float(message)
+          except:
+           mval = str(message).strip()
+          try:
+            Devices[iUnit].Update(nValue=0,sValue=str(mval))
+          except Exception as e:
             Domoticz.Debug(str(e))
          # RGB type, not command->process
          elif (len(mqttpath)>3) and ((mqttpath[2] == "color") or (mqttpath[2] == "white")) and ("/command" not in topic) and ("/set" not in topic):
