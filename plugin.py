@@ -17,6 +17,13 @@
             </options>
         </param>
 
+        <param field="Mode2" label="Add support of RGBW devices for Homebrigde" width="75px">
+            <options>
+                <option label="True" value="1"/>
+                <option label="False" value="0" default="true" />
+            </options>
+        </param>
+
         <param field="Mode6" label="Debug" width="75px">
             <options>
                 <option label="Verbose" value="Verbose"/>
@@ -60,6 +67,7 @@ class BasePlugin:
      if errmsg =="":
       try:
         Domoticz.Heartbeat(10)
+        self.homebridge = Parameters["Mode2"]
         self.debugging = Parameters["Mode6"]
         if self.debugging == "Verbose":
             Domoticz.Debugging(2+4+8+16+64)
@@ -613,7 +621,10 @@ class BasePlugin:
              if (mqttpath[2] == "white"):
               Domoticz.Device(Name=unitname, Unit=iUnit,Type=241, Subtype=3, Switchtype=7, Used=1,DeviceID=unitname).Create() # create Color White device
              else:
-              Domoticz.Device(Name=unitname, Unit=iUnit,Type=241, Subtype=6, Switchtype=7, Used=1,DeviceID=unitname).Create() # create RGBZW device
+              if self.homebridge!="1": # check if homebridge support is needed
+               Domoticz.Device(Name=unitname, Unit=iUnit,Type=241, Subtype=6, Switchtype=7, Used=1,DeviceID=unitname).Create() # create RGBZW device
+              else:
+               Domoticz.Device(Name=unitname, Unit=iUnit,Type=241, Subtype=1, Switchtype=7, Used=1,DeviceID=unitname).Create() # create RGBW device
             except Exception as e:
              Domoticz.Debug(str(e))
              return False
