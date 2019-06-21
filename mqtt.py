@@ -9,7 +9,7 @@ import Domoticz
 import time
 import json
 try:
- import random
+ import os
 except:
  Domoticz.Debug("Your Python environment is incomplete!")
 
@@ -44,10 +44,14 @@ class MqttClientSH2:
             return "None"
 
     def _generate_mqtt_client_id(self):
+       retval = 'Domoticz_' + str(int(time.time()))+'_'
        try:
-        return 'Domoticz_' + str(int(time.time()))+'_'+str(random.randint(1000, 9999))
+        rarray = list(os.urandom(4))
+        for i in range(len(rarray)):
+         retval += str(rarray[i])
        except:
-        return 'Domoticz_' + str(int(time.time()))
+        pass # there are nothing we can do
+       return retval
 
     def _open(self):
         Domoticz.Debug("MqttClient::open")
