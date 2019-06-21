@@ -199,12 +199,12 @@ class BasePlugin:
               Domoticz.Debug(str(e))
          else:
            if device_id[3]=="rgb":
-             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/color/"+device_id[2]+"/set"
+             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/color/"+device_id[2]+"/command"
            else:
-             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/white/"+device_id[2]+"/set"
+             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/white/"+device_id[2]+"/command"
            cmd = Command.strip().lower()
            if cmd in ["on","off"]:        # commands are simply on or off
-            scmd = '{"turn":"'+str(cmd)+'"}'
+            scmd = str(cmd)
             try:
              self.mqttClient.publish(mqttpath, scmd)
              if cmd=="off":
