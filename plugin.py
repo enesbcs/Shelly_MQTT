@@ -177,14 +177,20 @@ class BasePlugin:
             mqttpath = ""
             if int(Level)>0:
               amode = "on"
+              amodeBulb = "true"
             else:
               amode = "off"
-            if device_id[3]=="rgb":
-             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/color/"+device_id[2]+"/set"
-             scmd = '{"turn":"'+amode+'","mode":"color","gain":'+str(Level)+'}'
+              amodeBulb = "false"
+            if device_id[0] != 'shellybulb':
+              mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/color/"+device_id[2]+"/set"
+              scmd = '{"ison":"'+amodeBulb+'","mode":"color","gain":'+str(Level)+'}'
             else:
-             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/white/"+device_id[2]+"/set"
-             scmd = '{"turn":"'+amode+'","brightness":'+str(Level)+'}'
+             if device_id[3]=="rgb":
+              mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/color/"+device_id[2]+"/set"
+              scmd = '{"turn":"'+amode+'","mode":"color","gain":'+str(Level)+'}'
+             else:
+              mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/white/"+device_id[2]+"/set"
+              scmd = '{"turn":"'+amode+'","brightness":'+str(Level)+'}'
             Domoticz.Debug('RGB Level:' + scmd)
             if mqttpath:
              try:
@@ -199,8 +205,13 @@ class BasePlugin:
           if len(color)>0:
             if device_id[3]=="rgb":
              mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/color/"+device_id[2]+"/set"
-             scmd = '{"turn":"on","mode":"color","red":'+str(color["r"])+',"green":'+str(color["g"])+',"blue":'+str(color["b"]) +',"white":'+str(color["cw"])+'}'
-             Domoticz.Debug('RGB Color:' + scmd)
+             if device_id[0] != 'shellybulb':
+              scmd = '{"turn":"on","mode":"color","red":'+str(color["r"])+',"green":'+str(color["g"])+',"blue":'+str(color["b"]) +',"white":'+str(color["cw"])+'}'
+             else:
+              if color["r"] == 0 and color["g"] == 0 and color["b"] == 0:
+               scmd = '{"ison":"true","mode":"white","white":'+str(color["cw"])+',"brightness":'+str(Level)+'}'
+              else:
+               scmd = '{"ison":"true","mode":"color","red":'+str(color["r"])+',"green":'+str(color["g"])+',"blue":'+str(color["b"]) +',"white":'+str(color["cw"])+',"gain":'+str(Level)+'}'
              try:
               self.mqttClient.publish(mqttpath, scmd)
              except Exception as e:
