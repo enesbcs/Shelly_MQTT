@@ -176,15 +176,23 @@ class BasePlugin:
          if (Command == "Set Level"):
             mqttpath = ""
             if int(Level)>0:
-              amode = "on"
+             if "bulb" in device_id[0]: # Support Bulb device
+              amode = '"ison": true'
+             else:
+              amode = '"turn": "on"'    # standard RGB device
             else:
-              amode = "off"
+             if "bulb" in device_id[0]:
+              amode = '"ison": false'
+             else:
+              amode = '"turn": "off"'
             if device_id[3]=="rgb":
              mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/color/"+device_id[2]+"/set"
-             scmd = '{"turn":"'+amode+'","mode":"color","gain":'+str(Level)+'}'
+             scmd = '{'+amode+',"mode":"color","gain":'+str(Level)+'}'
             else:
              mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/white/"+device_id[2]+"/set"
-             scmd = '{"turn":"'+amode+'","brightness":'+str(Level)+'}'
+             scmd = '{'+amode+',"brightness":'+str(Level)+'}'
+            if ("2LED" in device_id[0]): # try to support Shelly2LED
+             scmd = '{"brightness":'+str(Level)+'}'
             Domoticz.Debug('RGB Level:' + scmd)
             if mqttpath:
              try:
@@ -199,7 +207,13 @@ class BasePlugin:
           if len(color)>0:
             if device_id[3]=="rgb":
              mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/color/"+device_id[2]+"/set"
-             scmd = '{"turn":"on","mode":"color","red":'+str(color["r"])+',"green":'+str(color["g"])+',"blue":'+str(color["b"]) +',"white":'+str(color["cw"])+'}'
+             if "bulb" in device_id[0]: # Handle Bulb device
+              if color["r"] == 0 and color["g"] == 0 and color["b"] == 0:
+               scmd = '{"ison":"true","mode":"white","white":'+str(color["cw"])+',"brightness":'+str(Level)+'}'
+              else:
+               scmd = '{"ison":"true","mode":"color","red":'+str(color["r"])+',"green":'+str(color["g"])+',"blue":'+str(color["b"]) +',"white":'+str(color["cw"])+',"gain":'+str(Level)+'}'
+             else: # Handle standard RGB device
+              scmd = '{"turn":"on","mode":"color","red":'+str(color["r"])+',"green":'+str(color["g"])+',"blue":'+str(color["b"]) +',"white":'+str(color["cw"])+'}'
              Domoticz.Debug('RGB Color:' + scmd)
              try:
               self.mqttClient.publish(mqttpath, scmd)
@@ -618,7 +632,7 @@ class BasePlugin:
                break
              if iUnit==0:
               iUnit=len(Devices)+1
-             if (mqttpath[2] == "white"):
+             if (mqttpath[2] == "white") or ("2LED" in unitname):
               Domoticz.Device(Name=unitname, Unit=iUnit,Type=241, Subtype=3, Switchtype=7, Used=1,DeviceID=unitname).Create() # create Color White device
              else:
               if self.homebridge!="1": # check if homebridge support is needed
