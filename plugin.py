@@ -406,7 +406,15 @@ class BasePlugin:
              nval = 2
             if pval>99:
              nval = 1
-            Devices[iUnit].Update(nValue=int(nval),sValue=str(pval))
+            try:
+             p_pval = Devices[iUnit].sValue
+             p_nval = Devices[iUnit].nValue
+            except:
+             p_pval = -1
+             p_nval = -1
+            if (str(p_pval).strip()!=str(pval).strip()) or (int(p_nval)!=int(nval)):
+             Domoticz.Debug(str(p_nval)+":"+str(nval)+" "+str(p_pval)+":"+str(pval))
+             Devices[iUnit].Update(nValue=int(nval),sValue=str(pval))
            except:
             Domoticz.Debug("MQTT message error " + str(topic) + ":"+ str(message))
           else:
