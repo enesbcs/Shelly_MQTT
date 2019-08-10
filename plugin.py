@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.5">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.6">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -400,7 +400,12 @@ class BasePlugin:
              return False
           if "-pos" in unitname:
            try:
-            pval = 100-int(str(message).strip())
+            if str(Parameters["Mode1"])!="1": # check if global inversion requested
+             pval = int(str(message).strip())
+            else:
+             pval = 100-int(str(message).strip())
+             if pval==101:
+              pval=-1
             nval = 0
             if pval>0 and pval<100:
              nval = 2
