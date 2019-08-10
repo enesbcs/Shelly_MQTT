@@ -400,7 +400,7 @@ class BasePlugin:
              return False
           if "-pos" in unitname:
            try:
-            if str(Parameters["Mode1"])!="1": # check if global inversion requested
+            if str(Parameters["Mode1"])=="1": # check if global inversion requested
              pval = int(str(message).strip())
             else:
              pval = 100-int(str(message).strip())
