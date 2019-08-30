@@ -172,7 +172,7 @@ class BasePlugin:
             except Exception as e:
              Domoticz.Debug(str(e))
         # RGB device
-        elif relnum in range(0,3) and len(device_id)==4 and device_id[len(device_id)-1] in ["rgb","w"]:
+        elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1] in ["rgb","w"]:
          if (Command == "Set Level"):
             mqttpath = ""
             if int(Level)>0:
