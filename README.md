@@ -55,5 +55,6 @@ Tested and working with:
  - Shelly4 Pro (relay and power consumption reporting)
  - Shelly H&T
  - Shelly RGBW2
+ - Shelly Flood
  
 **I would like to thank [Allterco Robotics](https://allterco.com/en/Shelly) for providing me with samples of Shelly Plug/Shelly2/Shelly4/Shelly RGBW2 to support the development of this plugin.**
