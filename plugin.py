@@ -9,18 +9,21 @@
         <param field="Port" label="Port" width="300px" required="true" default="1883"/>
         <param field="Username" label="Username" width="300px"/>
         <param field="Password" label="Password" width="300px" default="" password="true"/>
+
         <param field="Mode1" label="Invert Roller mode globally" width="75px">
             <options>
                 <option label="True" value="1"/>
                 <option label="False" value="0" default="true" />
             </options>
         </param>
+
         <param field="Mode2" label="Add support of RGBW devices for Homebrigde" width="75px">
             <options>
                 <option label="True" value="1"/>
                 <option label="False" value="0" default="true" />
             </options>
         </param>
+
         <param field="Mode6" label="Debug" width="75px">
             <options>
                 <option label="Verbose" value="Verbose"/>
@@ -584,9 +587,41 @@ class BasePlugin:
             Devices[iUnit].Update(nValue=0,sValue=str(sval))
            except Exception as e:
             Domoticz.Debug(str(e))
-
-         # SENSOR type, not command->process ShellyFlood (temp and battery)
-         elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['temperature','battery']) and ("shellyflood" in mqttpath[1]):
+         # SENSOR type, not command->process - device inside temperature!
+         elif (len(mqttpath)==3) and (mqttpath[2] == "temperature"):
+          unitname = mqttpath[1]+"-temp"
+          unitname = unitname.strip()
+          iUnit = -1
+          for Device in Devices:
+           try:
+            if (Devices[Device].DeviceID.strip() == unitname):
+             iUnit = Device
+             break
+           except:
+            pass
+          if iUnit<0: # if device does not exists in Domoticz, than create it
+            try:
+             iUnit = 0
+             for x in range(1,256):
+              if x not in Devices:
+               iUnit=x
+               break
+             if iUnit==0:
+              iUnit=len(Devices)+1
+             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Temperature",Used=0,DeviceID=unitname).Create()
+            except Exception as e:
+             Domoticz.Debug(str(e))
+             return False
+          try:
+           mval = float(message)
+          except:
+           mval = str(message).strip()
+          try:
+            Devices[iUnit].Update(nValue=0,sValue=str(mval))
+          except Exception as e:
+            Domoticz.Debug(str(e))
+         # SENSOR type, not command->process ShellyFlood,Shelly Smoke (temp and battery)
+         elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['temperature','battery']) and (("shellyflood" in mqttpath[1]) or ("shellysmoke" in mqttpath[1])):
           unitname = mqttpath[1]+"-temp"
           unitname = unitname.strip()
           iUnit = -1
@@ -629,9 +664,9 @@ class BasePlugin:
             Devices[iUnit].Update(nValue=0,sValue=str(mval))
            except Exception as e:
             Domoticz.Debug(str(e))
-         # SENSOR type, not command->process ShellyFlood (flood alert)
-         elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['flood']) and ("shellyflood" in mqttpath[1]):
-          unitname = mqttpath[1]+"-flood"
+         # Switch sensor type, ShellyFlood&ShellySmoke
+         elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['flood','smoke']):
+          unitname = mqttpath[1]+"-"+mqttpath[3]
           unitname = unitname.strip()
           iUnit = -1
           for Device in Devices:
@@ -650,62 +685,26 @@ class BasePlugin:
                break
              if iUnit==0:
               iUnit=len(Devices)+1
-             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Switch",Used=1,DeviceID=unitname).Create() # create switch for Flood Alert
+             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Switch",Used=1,DeviceID=unitname).Create() # create switch for Alert
              Devices[iUnit].Update(nValue=0,sValue="false")  # init value
             except Exception as e:
              Domoticz.Debug(str(e))
              return False
-       
           try:
              scmd = str(message).strip().lower()
              if scmd=="false":
               scmd = "off"
              else:
               scmd = "on"
-
              if (str(Devices[iUnit].sValue).lower() != scmd): # set device status if changed
               if (scmd == "off"): 
                Devices[iUnit].Update(nValue=0,sValue="Off")
               else:
                Devices[iUnit].Update(nValue=1,sValue="On")
-             
           except Exception as e:
               Domoticz.Debug(str(e))
               return False
 
-        # SENSOR type, not command->process - device inside temperature!
-         elif ((len(mqttpath)==3) and (mqttpath[2] == "temperature")):
-          unitname = mqttpath[1]+"-temp"
-          unitname = unitname.strip()
-          iUnit = -1
-          for Device in Devices:
-           try:
-            if (Devices[Device].DeviceID.strip() == unitname):
-             iUnit = Device
-             break
-           except:
-            pass
-          if iUnit<0: # if device does not exists in Domoticz, than create it
-            try:
-             iUnit = 0
-             for x in range(1,256):
-              if x not in Devices:
-               iUnit=x
-               break
-             if iUnit==0:
-              iUnit=len(Devices)+1
-             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Temperature",Used=1,DeviceID=unitname).Create()
-            except Exception as e:
-             Domoticz.Debug(str(e))
-             return False
-          try:
-           mval = float(message)
-          except:
-           mval = str(message).strip()
-          try:
-            Devices[iUnit].Update(nValue=0,sValue=str(mval))
-          except Exception as e:
-            Domoticz.Debug(str(e))
          # RGB type, not command->process
          elif (len(mqttpath)>3) and ((mqttpath[2] == "color") or (mqttpath[2] == "white")) and ("/command" not in topic) and ("/set" not in topic):
           unitname = mqttpath[1]+"-"+mqttpath[3]
