@@ -726,7 +726,7 @@ class BasePlugin:
                break
              if iUnit==0:
               iUnit=len(Devices)+1
-             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Selector Switch",SubType=8,Used=1,DeviceID=unitname).Create() # create switch for Alert
+             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Switch",SubType=8,Used=1,DeviceID=unitname).Create() # create switch for Alert
              Devices[iUnit].Update(nValue=0,sValue="false")  # init value
             except Exception as e:
              Domoticz.Debug(str(e))
