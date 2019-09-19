@@ -145,7 +145,7 @@ class BasePlugin:
         # support for v1.4 Percentage poisitioning
         elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="pos":
           cmnd = str(Command).strip().lower()
-          if (cmnd=="set level"): # percentage requested 
+          if (cmnd=="set level"): # percentage requested
            pos = str(100-Level).strip().lower()
            mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command/pos"
            Domoticz.Debug(mqttpath+" "+str(Command)+" "+str(Level))
@@ -280,7 +280,7 @@ class BasePlugin:
          return False
         Domoticz.Debug("MQTT message: " + topic + " " + str(message))
         mqttpath = topic.split('/')
-        if (mqttpath[0] == self.base_topic): 
+        if (mqttpath[0] == self.base_topic):
          # RELAY type, not command->process
          if (len(mqttpath)>3) and (mqttpath[2] == "relay") and ("/command" not in topic):
           unitname = mqttpath[1]+"-"+mqttpath[3]
@@ -516,7 +516,8 @@ class BasePlugin:
            return False
           return True
          # SENSOR type, not command->process ShellySense and ShellyHT
-         elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['temperature','humidity','battery']) and (("shellysense" in mqttpath[1]) or ("shellyht" in mqttpath[1])):
+#         elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['temperature','humidity','battery']) and (("shellysense" in mqttpath[1]) or ("shellyht" in mqttpath[1])):
+         elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['temperature','humidity','battery']): # allow for other device names
           unitname = mqttpath[1]+"-sensor"
           unitname = unitname.strip()
           iUnit = -1
@@ -697,7 +698,47 @@ class BasePlugin:
              else:
               scmd = "on"
              if (str(Devices[iUnit].sValue).lower() != scmd): # set device status if changed
-              if (scmd == "off"): 
+              if (scmd == "off"):
+               Devices[iUnit].Update(nValue=0,sValue="Off")
+              else:
+               Devices[iUnit].Update(nValue=1,sValue="On")
+          except Exception as e:
+              Domoticz.Debug(str(e))
+              return False
+         # Switch sensor type, ShellySense (motion)
+         elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['motion']):
+          unitname = mqttpath[1]+"-"+mqttpath[3]
+          unitname = unitname.strip()
+          iUnit = -1
+          for Device in Devices:
+           try:
+            if (Devices[Device].DeviceID.strip() == unitname):
+             iUnit = Device
+             break
+           except:
+            pass
+          if iUnit<0: # if device does not exists in Domoticz, than create it
+            try:
+             iUnit = 0
+             for x in range(1,256):
+              if x not in Devices:
+               iUnit=x
+               break
+             if iUnit==0:
+              iUnit=len(Devices)+1
+             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Switch",SubType=8,Used=1,DeviceID=unitname).Create() # create switch for Alert
+             Devices[iUnit].Update(nValue=0,sValue="false")  # init value
+            except Exception as e:
+             Domoticz.Debug(str(e))
+             return False
+          try:
+             scmd = str(message).strip().lower()
+             if scmd=="off" or scmd=="0":
+              scmd = "off"
+             else:
+              scmd = "on"
+             if (str(Devices[iUnit].sValue).lower() != scmd): # set device status if changed
+              if (scmd == "off"):
                Devices[iUnit].Update(nValue=0,sValue="Off")
               else:
                Devices[iUnit].Update(nValue=1,sValue="On")
