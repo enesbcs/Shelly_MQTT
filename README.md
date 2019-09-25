@@ -58,4 +58,5 @@ Tested and working with:
  - Shelly Flood
 
 *Power consumption can be enabled in the plugin settings page manually, it's an optional feature without any further support
+
 **I would like to thank [Allterco Robotics](https://allterco.com/en/Shelly) for providing me with samples of Shelly Plug/Shelly2/Shelly4/Shelly RGBW2 to support the development of this plugin.**
