@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.7">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.8">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -21,6 +21,14 @@
             <options>
                 <option label="True" value="1"/>
                 <option label="False" value="0" default="true" />
+            </options>
+        </param>
+
+        <param field="Mode3" label="I am accepting that Power reading may be inaccurate and is totally unsupported, just enable it!" width="120px">
+            <options>
+                <option label="Power and energy" value="2"/>
+                <option label="Only Power" value="1"/>
+                <option label="Not used" value="0" default="true" />
             </options>
         </param>
 
@@ -68,6 +76,10 @@ class BasePlugin:
       try:
         Domoticz.Heartbeat(10)
         self.homebridge = Parameters["Mode2"]
+        try:
+         self.powerread  = int(Parameters["Mode3"])
+        except:
+         self.powerread  = 0
         self.debugging = Parameters["Mode6"]
         if self.debugging == "Verbose":
             Domoticz.Debugging(2+4+8+16+64)
@@ -323,7 +335,7 @@ class BasePlugin:
               iUnit=len(Devices)+1
              if devtype==0:
               Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="Switch",Used=1,DeviceID=unitname).Create()
-             else:
+             elif self.powerread:
               if subval=="energy" or subval=="power":
                Domoticz.Device(Name=unitname, Unit=iUnit,Type=243,Subtype=29,Used=1,DeviceID=unitname).Create()
             except Exception as e:
@@ -340,7 +352,7 @@ class BasePlugin:
            except Exception as e:
             Domoticz.Debug(str(e))
             return False
-          else:
+          elif self.powerread:
            try:
             curval = Devices[iUnit].sValue
             prevdata = curval.split(";")
@@ -354,16 +366,19 @@ class BasePlugin:
            except:
             mval = str(message).strip()
            sval = ""
-           if subval=="power":
+           if subval=="power" and self.powerread==2:
             sval = str(mval)+";"+str(prevdata[1])
-           elif subval=="energy":
+           elif subval=="power" and self.powerread==1:
+            sval = str(mval)+";0"
+           elif subval=="energy" and self.powerread==2:
             try:
-             mval2 = (mval/100) # 10*Wh?
+             mval2 = round((mval*0.06),4) # 10*Wh? or Watt-min??
             except:
              mval2 = str(mval)
             sval = str(prevdata[0])+";"+str(mval2)
            try:
-            Devices[iUnit].Update(nValue=0,sValue=str(sval))
+            if sval!="":
+             Devices[iUnit].Update(nValue=0,sValue=str(sval))
            except Exception as e:
             Domoticz.Debug(str(e))
           return True

@@ -48,13 +48,14 @@ git pull
 
 Tested and working with:
  - Shelly 1 Open Source (relay)
- - Shelly 1PM (relay and power consumption reporting)
- - Shelly Plug (relay and power consumption reporting)
- - Shelly Plug S (relay and power consumption reporting)
+ - Shelly 1PM (relay)*
+ - Shelly Plug (relay)*
+ - Shelly Plug S (relay)*
  - Shelly2 Switch (relay and roller shutter mode, positioning)
- - Shelly4 Pro (relay and power consumption reporting)
+ - Shelly4 Pro (relay)*
  - Shelly H&T
  - Shelly RGBW2
  - Shelly Flood
- 
+
+*Power consumption can be enabled in the plugin settings page manually, it's an optional feature without any further support
 **I would like to thank [Allterco Robotics](https://allterco.com/en/Shelly) for providing me with samples of Shelly Plug/Shelly2/Shelly4/Shelly RGBW2 to support the development of this plugin.**
