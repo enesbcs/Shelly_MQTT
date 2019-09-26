@@ -678,8 +678,10 @@ class BasePlugin:
            mval = str(message).strip()
           try:
             Devices[iUnit].Update(nValue=0,sValue=str(mval))
+            return True
           except Exception as e:
             Domoticz.Debug(str(e))
+            return False
          # Switch sensor type, ShellyFlood & ShellySmoke & ShellyMotion
          elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['flood','smoke','motion']):
           unitname = mqttpath[1]+"-"+mqttpath[3]
@@ -797,7 +799,7 @@ class BasePlugin:
 
           return True
          # EMETER type, not command->process
-         if (len(mqttpath)>3) and (mqttpath[2] == "emeter"):
+         elif (len(mqttpath)>3) and (mqttpath[2] == "emeter"):
           unitname = mqttpath[1]+"-"+mqttpath[3]
           unitname = unitname.strip()
           funcid = 0
