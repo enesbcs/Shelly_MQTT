@@ -316,7 +316,7 @@ class BasePlugin:
             unitname=mqttpath[1]+"-"+str(funcid)+"-energy" # fix 2.5 and 4pro support (also 1PM,EM)
            else:
             unitname=mqttpath[1]+"-energy" # shelly2
-          elif subval=="voltage"
+          elif subval=="voltage":
            unitname=mqttpath[1]+"-"+str(funcid)+"-voltage" # Shelly EM voltage meter
           iUnit = -1
           for Device in Devices:
