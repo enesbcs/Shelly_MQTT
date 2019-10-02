@@ -293,29 +293,31 @@ class BasePlugin:
         Domoticz.Debug("MQTT message: " + topic + " " + str(message))
         mqttpath = topic.split('/')
         if (mqttpath[0] == self.base_topic):
-         # RELAY type, not command->process
-         if (len(mqttpath)>3) and (mqttpath[2] == "relay") and ("/command" not in topic):
+         # RELAY and EMETER type, not command->process
+         if (len(mqttpath)>3) and (mqttpath[2] in ["relay","emeter"]) and ("/command" not in topic):
           unitname = mqttpath[1]+"-"+mqttpath[3]
           unitname = unitname.strip()
           devtype = 1
           funcid = -1
           try:
            funcid = int(mqttpath[3].strip())
-           devtype=0
+           devtype=0 # regular relay
           except:
-           devtype = 1
+           devtype = 1 # Shelly2 power meter
           if len(mqttpath)==5 and devtype==0:
-           devtype = 2
+           devtype = 2 # indexed relays with power readings (Shelly EM/1PM/2.5/4Pro)
           subval=""
           if devtype==1:
-               subval = mqttpath[3].strip()
+           subval = mqttpath[3].strip()
           elif devtype==2:
-               subval = mqttpath[4].strip()
+           subval = mqttpath[4].strip()
           if subval=="power" or subval=="energy":
            if funcid in [0,1,2,3]:
-            unitname=mqttpath[1]+"-"+str(funcid)+"-energy" # fix 2.5 and 4pro support
+            unitname=mqttpath[1]+"-"+str(funcid)+"-energy" # fix 2.5 and 4pro support (also 1PM,EM)
            else:
             unitname=mqttpath[1]+"-energy" # shelly2
+          elif subval=="voltage"
+           unitname=mqttpath[1]+"-"+str(funcid)+"-voltage" # Shelly EM voltage meter
           iUnit = -1
           for Device in Devices:
            try:
@@ -335,6 +337,8 @@ class BasePlugin:
               iUnit=len(Devices)+1
              if devtype==0:
               Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="Switch",Used=1,DeviceID=unitname).Create()
+             elif subval=="voltage":
+              Domoticz.Device(Name=unitname, Unit=iUnit,Type=243,Subtype=8,Used=1,DeviceID=unitname).Create()
              elif self.powerread:
               if subval=="energy" or subval=="power":
                Domoticz.Device(Name=unitname, Unit=iUnit,Type=243,Subtype=29,Used=1,DeviceID=unitname).Create()
@@ -349,6 +353,16 @@ class BasePlugin:
               Devices[iUnit].Update(nValue=1,sValue="On")
              else:
               Devices[iUnit].Update(nValue=0,sValue="Off")
+           except Exception as e:
+            Domoticz.Debug(str(e))
+            return False
+          elif subval=="voltage":
+           try:
+            mval = float(str(message).strip())
+           except:
+            mval = str(message).strip()
+           try:
+            Devices[iUnit].Update(nValue=0,sValue=str(mval))
            except Exception as e:
             Domoticz.Debug(str(e))
             return False
@@ -678,8 +692,10 @@ class BasePlugin:
            mval = str(message).strip()
           try:
             Devices[iUnit].Update(nValue=0,sValue=str(mval))
+            return True
           except Exception as e:
             Domoticz.Debug(str(e))
+            return False
          # Switch sensor type, ShellyFlood & ShellySmoke & ShellyMotion
          elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['flood','smoke','motion']):
           unitname = mqttpath[1]+"-"+mqttpath[3]
