@@ -1,7 +1,5 @@
-| PayPal |
-|-------|
-|  [![donate](https://img.shields.io/badge/donate-PayPal-blue.svg)](https://www.paypal.me/rpieasy) |
-If you like this project, or you wants to support the development, you can do that with the paypal link above. Or simply send me a Shelly device, that is not already supported, but you wish. :)
+If you like this project, or you wants to support the development, you can send me a Shelly device, that is not already supported, but you wish. :)
+
 [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/I3I514LLW)
 
 # ShellyMQTT - Domoticz Python Plugin
