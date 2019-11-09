@@ -386,7 +386,7 @@ class BasePlugin:
             sval = str(mval)+";0"
            elif subval=="energy" and self.powerread==2:
             try:
-             mval2 = round((mval*0.06),4) # 10*Wh? or Watt-min??
+             mval2 = round((mval*0.017),4) # 10*Wh? or Watt-min??
             except:
              mval2 = str(mval)
             sval = str(prevdata[0])+";"+str(mval2)
