@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.8">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.9">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -184,7 +184,7 @@ class BasePlugin:
             except Exception as e:
              Domoticz.Debug(str(e))
         # RGB device
-        elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1] in ["rgb","w"]:
+        elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1] in ["rgb","w","dimmer"]:
          if (Command == "Set Level"):
             mqttpath = ""
             if int(Level)>0:
@@ -200,6 +200,9 @@ class BasePlugin:
             if device_id[3]=="rgb":
              mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/color/"+device_id[2]+"/set"
              scmd = '{'+amode+',"mode":"color","gain":'+str(Level)+'}'
+            elif device_id[3]=="dimmer": # Dimmer support added by asquelt
+             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/light/"+device_id[2]+"/set"
+             scmd = '{'+amode+',"brightness":'+str(Level)+'}'
             else:
              mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/white/"+device_id[2]+"/set"
              scmd = '{'+amode+',"brightness":'+str(Level)+'}'
@@ -234,6 +237,8 @@ class BasePlugin:
          else:
            if device_id[3]=="rgb":
              mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/color/"+device_id[2]+"/command"
+           elif device_id[3]=="dimmer":
+             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/light/"+device_id[2]+"/command"
            else:
              mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/white/"+device_id[2]+"/command"
            cmd = Command.strip().lower()
@@ -737,10 +742,12 @@ class BasePlugin:
               Domoticz.Debug(str(e))
               return False
          # RGB type, not command->process
-         elif (len(mqttpath)>3) and ((mqttpath[2] == "color") or (mqttpath[2] == "white")) and ("/command" not in topic) and ("/set" not in topic):
+         elif (len(mqttpath)>3) and (mqttpath[2] in ["color","white","light"]) and ("/command" not in topic) and ("/set" not in topic):
           unitname = mqttpath[1]+"-"+mqttpath[3]
           if (mqttpath[2] == "white"):
            unitname = unitname+"-w"
+          elif (mqttpath[2] == 'light'):
+           unitname = unitname+"-dimmer"
           else:
            unitname = unitname+"-rgb"
           unitname = unitname.strip()
@@ -761,7 +768,7 @@ class BasePlugin:
                break
              if iUnit==0:
               iUnit=len(Devices)+1
-             if (mqttpath[2] == "white") or ("2LED" in unitname):
+             if (mqttpath[2] in ["white","light"]) or ("2LED" in unitname):
               Domoticz.Device(Name=unitname, Unit=iUnit,Type=241, Subtype=3, Switchtype=7, Used=1,DeviceID=unitname).Create() # create Color White device
              else:
               if self.homebridge!="1": # check if homebridge support is needed
