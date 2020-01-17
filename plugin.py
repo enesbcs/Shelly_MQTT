@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.3.9">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.4.0">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -298,8 +298,12 @@ class BasePlugin:
         Domoticz.Debug("MQTT message: " + topic + " " + str(message))
         mqttpath = topic.split('/')
         if (mqttpath[0] == self.base_topic):
+         forceenergydev = False
+         # workaround for Shelly Dimmer energy report routing
+         if (len(mqttpath)>4) and (mqttpath[4] in ["power","energy"]):
+          forceenergydev = True
          # RELAY and EMETER type, not command->process
-         if (len(mqttpath)>3) and (mqttpath[2] in ["relay","emeter"]) and ("/command" not in topic):
+         if (forceenergydev) or ((len(mqttpath)>3) and (mqttpath[2] in ["relay","emeter"]) and ("/command" not in topic)):
           unitname = mqttpath[1]+"-"+mqttpath[3]
           unitname = unitname.strip()
           devtype = 1
