@@ -54,6 +54,9 @@ Tested and working with:
  - Shelly H&T
  - Shelly RGBW2
  - Shelly Flood
+ - Shelly Door and Window sensor
+ - Shelly 2LED
+ - Shelly Dimmer
 
 *Power consumption can be enabled in the plugin settings page manually, it's an optional feature without any further support
 
