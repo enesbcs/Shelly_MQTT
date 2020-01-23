@@ -49,7 +49,7 @@ Tested and working with:
  - Shelly 1PM (relay)*
  - Shelly Plug (relay)*
  - Shelly Plug S (relay)*
- - Shelly2 Switch (relay and roller shutter mode, positioning)
+ - Shelly2 and 2.5 Switch (relay and roller shutter mode, positioning)
  - Shelly4 Pro (relay)*
  - Shelly H&T
  - Shelly RGBW2
