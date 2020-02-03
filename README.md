@@ -59,6 +59,7 @@ Tested and working with:
  - Shelly Door and Window sensor
  - Shelly 2LED
  - Shelly Dimmer
+ - Shelly Bulb RGBW
 
 *Power consumption can be enabled in the plugin settings page manually, it's an optional feature without any further support
 
