@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.4.0">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.4.2">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -910,10 +910,11 @@ class BasePlugin:
               Devices[iUnit].Update(nValue=status, sValue=dimmer, Color=jColor)
             else: # white
              dimmer = str(jmsg["brightness"])
-             Domoticz.Debug('Updating device #' + str(Devices[iUnit].ID))
-             Domoticz.Debug('nValue: ' + str(Devices[iUnit].nValue) + ' -> ' + str(status))
-             Domoticz.Debug('sValue: ' + Devices[iUnit].sValue + ' -> ' + dimmer)
-             Devices[iUnit].Update(nValue=status, sValue=dimmer)
+             if (Devices[iUnit].nValue != status or Devices[iUnit].sValue != dimmer):
+              Domoticz.Debug('Updating device #' + str(Devices[iUnit].ID))
+              Domoticz.Debug('nValue: ' + str(Devices[iUnit].nValue) + ' -> ' + str(status))
+              Domoticz.Debug('sValue: ' + Devices[iUnit].sValue + ' -> ' + dimmer)
+              Devices[iUnit].Update(nValue=status, sValue=dimmer)
 
           return True
 
