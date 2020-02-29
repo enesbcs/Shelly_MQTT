@@ -16,11 +16,10 @@ If you do not have a working Python >=3.5 installation, please install it first!
 (if Shelly_MQTT does not appear in HW list after installation, read again the above article!)
 
 Setup and run MQTT broker and an MQTT capable Shelly device. (http://shelly-api-docs.shelly.cloud/#mqtt-support-beta)
-
-Please do not check "Use custom MQTT prefix" on your device settings page if you want to use this plugin as this will render device detection unusable!
-
 If you do not have an MQTT server yet, install Mosquitto for example:
 http://mosquitto.org/blog/2013/01/mosquitto-debian-repository/
+
+Please do not check "Use custom MQTT prefix" on your device settings page if you want to use this plugin as this will render device detection unusable!
 
 ## Installation
 
