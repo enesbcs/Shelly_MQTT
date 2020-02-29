@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.4.2">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.4.3">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -17,7 +17,7 @@
             </options>
         </param>
 
-        <param field="Mode2" label="Add support of RGBW devices for Homebrigde" width="75px">
+        <param field="Mode2" label="Add support of RGBW devices for Homebridge" width="75px">
             <options>
                 <option label="True" value="1"/>
                 <option label="False" value="0" default="true" />
@@ -29,6 +29,13 @@
                 <option label="Power and energy" value="2"/>
                 <option label="Only Power" value="1"/>
                 <option label="Not used" value="0" default="true" />
+            </options>
+        </param>
+
+        <param field="Mode4" label="Use absolute value of energy readings" width="75px">
+            <options>
+                <option label="True" value="1"/>
+                <option label="False" value="0" default="true" />
             </options>
         </param>
 
@@ -80,6 +87,10 @@ class BasePlugin:
          self.powerread  = int(Parameters["Mode3"])
         except:
          self.powerread  = 0
+        try:
+         self.abspwr  = int(Parameters["Mode4"])
+        except:
+         self.abspwr  = 0
         self.debugging = Parameters["Mode6"]
         if self.debugging == "Verbose":
             Domoticz.Debugging(2+4+8+16+64)
@@ -389,6 +400,8 @@ class BasePlugin:
             prevdata.append(0)
            try:
             mval = float(str(message).strip())
+            if self.abspwr!=0: # activate ugly fix for solar cell negative input
+             mval = abs(mval)
            except:
             mval = str(message).strip()
            sval = ""
