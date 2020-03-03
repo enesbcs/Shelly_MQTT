@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.4.3">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.4.4">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -137,8 +137,8 @@ class BasePlugin:
          if cmd in ["on","off"]:        # commands are simply on or off
           try:
            self.mqttClient.publish(mqttpath, cmd)
-           if cmd=="off":
-            device.Update(nValue=int(Level),sValue=str(Command)) # force device update if it is offline
+#           if cmd=="off":
+#            device.Update(nValue=int(Level),sValue=str(Command)) # force device update if it is offline
           except Exception as e:
            Domoticz.Debug(str(e))
         # otherwise check if it is a roller shutter
@@ -257,8 +257,8 @@ class BasePlugin:
             scmd = str(cmd)
             try:
              self.mqttClient.publish(mqttpath, scmd)
-             if cmd=="off":
-              device.Update(nValue=int(Level),sValue=str(Command)) # force device update if it is offline
+#             if cmd=="off":
+#              device.Update(nValue=int(Level),sValue=str(Command)) # force device update if it is offline
             except Exception as e:
              Domoticz.Debug(str(e))
 
