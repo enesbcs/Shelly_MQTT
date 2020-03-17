@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.4.5">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.4.6">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -341,6 +341,8 @@ class BasePlugin:
           elif subval=="reactive_power" or subval=="returned_energy":
            if funcid in [0,1,2,3]:
             unitname=mqttpath[1]+"-"+str(funcid)+"-renergy" # EM
+          elif subval=="current":
+           unitname=mqttpath[1]+"-"+str(funcid)+"-current" # Shelly EM current meter
           iUnit = -1
           for Device in Devices:
            try:
@@ -362,6 +364,8 @@ class BasePlugin:
               Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="Switch",Used=1,DeviceID=unitname).Create()
              elif subval=="voltage":
               Domoticz.Device(Name=unitname, Unit=iUnit,Type=243,Subtype=8,Used=1,DeviceID=unitname).Create()
+             elif subval=="current":
+              Domoticz.Device(Name=unitname, Unit=iUnit,Type=243,Subtype=23,Used=1,DeviceID=unitname).Create()
              elif self.powerread:
               if "energy" in subval or "power" in subval:
                Domoticz.Device(Name=unitname, Unit=iUnit,Type=243,Subtype=29,Used=0,DeviceID=unitname).Create()
@@ -379,7 +383,7 @@ class BasePlugin:
            except Exception as e:
             Domoticz.Debug(str(e))
             return False
-          elif subval=="voltage":
+          elif subval in ["voltage","current"]:
            try:
             mval = float(str(message).strip())
            except:
