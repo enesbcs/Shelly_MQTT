@@ -199,12 +199,12 @@ class BasePlugin:
          if (Command == "Set Level"):
             mqttpath = ""
             if int(Level)>0:
-             if "bulb" in device_id[0]: # Support Bulb device
+             if "bulb" in device_id[0] and ("duo" not in device_id[0]): # Support Bulb device
               amode = '"ison": true'
              else:
               amode = '"turn": "on"'    # standard RGB device
             else:
-             if "bulb" in device_id[0]:
+             if "bulb" in device_id[0] and ("duo" not in device_id[0]):
               amode = '"ison": false'
              else:
               amode = '"turn": "off"'
