@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.4.4">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.4.5">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -928,6 +928,76 @@ class BasePlugin:
               Domoticz.Debug('nValue: ' + str(Devices[iUnit].nValue) + ' -> ' + str(status))
               Domoticz.Debug('sValue: ' + Devices[iUnit].sValue + ' -> ' + dimmer)
               Devices[iUnit].Update(nValue=status, sValue=dimmer)
+         # SENSOR type, not command->process - device ext temperature!
+         elif (len(mqttpath)==4) and (mqttpath[2] == "ext_temperature"):
+          unitname = mqttpath[1]+"-"+mqttpath[3]+"-temp"
+          unitname = unitname.strip()
+          iUnit = -1
+          for Device in Devices:
+           try:
+            if (Devices[Device].DeviceID.strip() == unitname):
+             iUnit = Device
+             break
+           except:
+            pass
+          if iUnit<0: # if device does not exists in Domoticz, than create it
+            try:
+             iUnit = 0
+             for x in range(1,256):
+              if x not in Devices:
+               iUnit=x
+               break
+             if iUnit==0:
+              iUnit=len(Devices)+1
+             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Temperature",Used=0,DeviceID=unitname).Create()
+            except Exception as e:
+             Domoticz.Debug(str(e))
+             return False
+          try:
+           mval = float(message)
+          except:
+           mval = str(message).strip()
+          try:
+            Devices[iUnit].Update(nValue=0,sValue=str(mval))
+            return True
+          except Exception as e:
+            Domoticz.Debug(str(e))
+            return False
+         # SENSOR type, not command->process - device ext humidity!
+         elif (len(mqttpath)==4) and (mqttpath[2] == "ext_humidity"):
+          unitname = mqttpath[1]+"-"+mqttpath[3]+"-hum"
+          unitname = unitname.strip()
+          iUnit = -1
+          for Device in Devices:
+           try:
+            if (Devices[Device].DeviceID.strip() == unitname):
+             iUnit = Device
+             break
+           except:
+            pass
+          if iUnit<0: # if device does not exists in Domoticz, than create it
+            try:
+             iUnit = 0
+             for x in range(1,256):
+              if x not in Devices:
+               iUnit=x
+               break
+             if iUnit==0:
+              iUnit=len(Devices)+1
+             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Humidity",Used=0,DeviceID=unitname).Create()
+            except Exception as e:
+             Domoticz.Debug(str(e))
+             return False
+          try:
+           mval = float(message)
+          except:
+           mval = str(message).strip()
+          try:
+            Devices[iUnit].Update(nValue=int(mval),sValue=str(mval))
+            return True
+          except Exception as e:
+            Domoticz.Debug(str(e))
+            return False
 
           return True
 
