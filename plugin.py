@@ -169,7 +169,10 @@ class BasePlugin:
         elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="pos":
           cmnd = str(Command).strip().lower()
           if (cmnd=="set level"): # percentage requested
-           pos = str(100-Level).strip().lower()
+           if str(Parameters["Mode1"])=="1": # check if global inversion requested
+             pos = str(Level).strip().lower()
+           else:
+             pos = str(100-Level).strip().lower()
            mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command/pos"
            Domoticz.Debug(mqttpath+" "+str(Command)+" "+str(Level))
            try:
