@@ -1,6 +1,7 @@
-If you like this project, or you wants to support the development, you can send me a Shelly device, that is not already supported, but you wish. :)
-
-[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/I3I514LLW)
+# If you like this project, or you wants to support the development, you can do that by:
+- Buying a [coffee](https://ko-fi.com/I3I514LLW)
+- Contributing to any of my [Wishlist items](https://www.wishlist.com/wishlists_/alexander-nagy/dwGnV/)
+- Adding Python code by [Pull Request](https://github.com/enesbcs/Shelly_MQTT/pulls)
 
 # ShellyMQTT - Domoticz Python Plugin
 Python plugin for Shelly relay devices using MQTT protocol
@@ -19,7 +20,7 @@ Setup and run MQTT broker and an MQTT capable Shelly device. (http://shelly-api-
 If you do not have an MQTT server yet, install Mosquitto for example:
 http://mosquitto.org/blog/2013/01/mosquitto-debian-repository/
 
-Please do not check "Use custom MQTT prefix" on your device settings page if you want to use this plugin as this will render device detection unusable!
+!!! Please, DO NOT CHECK "Use custom MQTT prefix" on your device settings page if you want to use this plugin as this will render device detection unusable !!!
 
 ## Installation
 
@@ -63,6 +64,8 @@ Tested and working with:
  - Shelly 2LED
  - Shelly Dimmer
  - Shelly Bulb RGBW
+
+**I can only support devices that i have. Thank you for your understanding.
 
 *Power consumption can be enabled in the plugin settings page manually, it's an optional feature without any further support
 

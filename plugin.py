@@ -344,6 +344,12 @@ class BasePlugin:
           elif subval=="reactive_power" or subval=="returned_energy":
            if funcid in [0,1,2,3]:
             unitname=mqttpath[1]+"-"+str(funcid)+"-renergy" # EM
+          elif subval=="total":
+           if funcid in [0,1,2,3]:
+            unitname=mqttpath[1]+"-"+str(funcid)+"-total" # EM
+          elif subval=="total_returned":
+           if funcid in [0,1,2,3]:
+            unitname=mqttpath[1]+"-"+str(funcid)+"-rtotal" # EM
           elif subval=="current":
            unitname=mqttpath[1]+"-"+str(funcid)+"-current" # Shelly EM current meter
           iUnit = -1
@@ -370,7 +376,7 @@ class BasePlugin:
              elif subval=="current":
               Domoticz.Device(Name=unitname, Unit=iUnit,Type=243,Subtype=23,Used=1,DeviceID=unitname).Create()
              elif self.powerread:
-              if "energy" in subval or "power" in subval:
+              if "energy" in subval or "power" in subval or "total" in subval:
                Domoticz.Device(Name=unitname, Unit=iUnit,Type=243,Subtype=29,Used=0,DeviceID=unitname).Create()
             except Exception as e:
              Domoticz.Debug(str(e))
@@ -416,6 +422,11 @@ class BasePlugin:
             sval = str(mval)+";"+str(prevdata[1])
            elif "power" in subval and self.powerread==1:
             sval = str(mval)+";0"
+           elif "total" in subval:
+            try:
+             sval = "0;"+str(float(mval))
+            except:
+             sval = "0;0"
            elif "energy" in subval and self.powerread==2:
             try:
              mval2 = round((mval*0.017),4) # 10*Wh? or Watt-min??
