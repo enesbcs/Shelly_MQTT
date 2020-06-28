@@ -65,7 +65,7 @@ Tested and working with:
  - Shelly Dimmer
  - Shelly Bulb RGBW
 
-**I can only support devices that i have. Thank you for your understanding.
+**I can only support devices that i have. Thank you for your understanding.**
 
 *Power consumption can be enabled in the plugin settings page manually, it's an optional feature without any further support
 
