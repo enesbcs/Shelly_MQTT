@@ -64,6 +64,7 @@ Tested and working with:
  - Shelly 2LED
  - Shelly Dimmer
  - Shelly Bulb RGBW
+ - Shelly EM
 
 **I can only support devices that i have. Thank you for your understanding.**
 
