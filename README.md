@@ -1,6 +1,6 @@
 # If you like this project, or you wants to support the development, you can do that by:
+- Contributing to any of my [Wishlist items](https://www.wishlist.com/wishlist/NZvjYJ)
 - Buying a [coffee](https://ko-fi.com/I3I514LLW)
-- Contributing to any of my [Wishlist items](https://www.wishlist.com/wishlists_/alexander-nagy/dwGnV/)
 - Adding Python code by [Pull Request](https://github.com/enesbcs/Shelly_MQTT/pulls)
 
 # ShellyMQTT - Domoticz Python Plugin
