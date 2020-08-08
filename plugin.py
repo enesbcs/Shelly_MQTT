@@ -130,19 +130,6 @@ class BasePlugin:
             device.Update(nValue=int(Level),sValue=str(Command)) # force device update if it is offline
           except Exception as e:
            Domoticz.Debug(str(e))
-        # # # check if it's Shelly Dimmer
-        # elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="light": # check if is it a normal relay
-        #  mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/light/"+device_id[2]+"/command" # reconstrutct necessarry mqtt path
-        #  cmd = Command.strip().lower()       
-        #  Domoticz.Debug(mqttpath+" "+cmd)
-        #  if cmd in ["on","off"]:        # commands are simply on or off
-        #   try:
-        #    self.mqttClient.publish(mqttpath, cmd)
-        #    if cmd=="off":
-        #     device.Update(nValue=int(Level),sValue=str(Command)) # force device update if it is offline
-        #   except Exception as e:
-        #    Domoticz.Debug(str(e))        
-        # otherwise check if it is a roller shutter
         elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="roller":
          cmd = Command.strip().lower()
          scmd = ""                      # Translate Domoticz command to Shelly command
@@ -523,45 +510,6 @@ class BasePlugin:
            Domoticz.Debug(str(e))
            return False
           return True
-        #  #shelly dimmer 2
-        #  elif (len(mqttpath)==4) and (mqttpath[2] == "light") and (mqttpath[len(mqttpath)-1]=="0"):         
-        #   unitname = mqttpath[1]+"-"+mqttpath[3]+"-light"
-        #   unitname = unitname.strip()
-        #   iUnit = -1
-        #   for Device in Devices:
-        #    try:
-        #     if (Devices[Device].DeviceID.strip() == unitname): 
-        #      iUnit = Device
-        #      break
-        #    except:
-        #     pass
-        #   if iUnit<0: # if device does not exists in Domoticz, than create it
-        #     try:
-        #      iUnit = 0
-        #      for x in range(1,256):
-        #       if x not in Devices:
-        #        iUnit=x
-        #        break
-        #      if iUnit==0:
-        #       iUnit=len(Devices)+1
-        #      Domoticz.Device(Name=unitname+" BUTTON", Unit=iUnit,TypeName="Switch",Used=0,DeviceID=unitname).Create()
-        #     except Exception as e:
-        #      Domoticz.Debug(str(e))
-        #      return False             
-        #   try: 
-        #    if message=="on" or str(message)=="1":
-        #     scmd = "on"
-        #    else:
-        #     scmd = "off"
-        #    if (str(Devices[iUnit].sValue).lower() != scmd):            
-        #     if (scmd == "on"): # set device status if needed
-        #       Devices[iUnit].Update(nValue=1, sValue="On")
-        #     else:
-        #       Devices[iUnit].Update(nValue=0, sValue="Off")
-        #   except Exception as e:
-        #    Domoticz.Debug(str(e))
-        #    return False
-        #   return True
          # LONGPUSH type, not command->process
          elif (len(mqttpath)>3) and (mqttpath[2] == "longpush") and (mqttpath[len(mqttpath)-1]!="command"):
           unitname = mqttpath[1]+"-"+mqttpath[3]+"-lpush"
