@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.4.6">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.0">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -33,6 +33,13 @@
         </param>
 
         <param field="Mode4" label="Use absolute value of energy readings" width="75px">
+            <options>
+                <option label="True" value="1"/>
+                <option label="False" value="0" default="true" />
+            </options>
+        </param>
+
+        <param field="Mode5" label="Enable heartbeat devices" width="75px">
             <options>
                 <option label="True" value="1"/>
                 <option label="False" value="0" default="true" />
@@ -77,6 +84,20 @@ class BasePlugin:
     def __init__(self):
      return
 
+    def _updatedevice(self,devname):
+     doupdate = False
+     try:
+      if devname in self.sdevices:
+       if time.time()-self.sdevices[devname]>=self.utimeout:
+        self.sdevices[devname] = time.time()
+        doupdate = True
+      else:
+       self.sdevices.update({devname:time.time()})
+       doupdate = True
+     except:
+      pass
+     return doupdate
+
     def onStart(self):
      global errmsg
      if errmsg =="":
@@ -91,6 +112,10 @@ class BasePlugin:
          self.abspwr  = int(Parameters["Mode4"])
         except:
          self.abspwr  = 0
+        try:
+         self.alive  = int(Parameters["Mode5"])
+        except:
+         self.alive  = 0
         self.debugging = Parameters["Mode6"]
         if self.debugging == "Verbose":
             Domoticz.Debugging(2+4+8+16+64)
@@ -100,6 +125,8 @@ class BasePlugin:
         self.mqttserveraddress = Parameters["Address"].strip()
         self.mqttserverport = Parameters["Port"].strip()
         self.mqttClient = MqttClientSH2(self.mqttserveraddress, self.mqttserverport, "", self.onMQTTConnected, self.onMQTTDisconnected, self.onMQTTPublish, self.onMQTTSubscribed)
+        self.sdevices = {} # list for heartbeat caching
+        self.utimeout = 120 # 120 seconds timeout for device heartbeat
       except Exception as e:
         Domoticz.Error("MQTT client start error: "+str(e))
         self.mqttClient = None
@@ -312,6 +339,35 @@ class BasePlugin:
         Domoticz.Debug("MQTT message: " + topic + " " + str(message))
         mqttpath = topic.split('/')
         if (mqttpath[0] == self.base_topic):
+         if self.alive: # if device heartbeat enabled
+           if self._updatedevice(str(mqttpath[1])): # if update needed
+               unitname = mqttpath[1]+"-online"
+               iUnit = -1
+               for Device in Devices:
+                try:
+                 if (Devices[Device].DeviceID.strip() == unitname):
+                  iUnit = Device
+                  break
+                except:
+                 pass
+               if iUnit<0: # if device does not exists in Domoticz, than create it
+                 try:
+                  iUnit = 0
+                  for x in range(1,256):
+                   if x not in Devices:
+                    iUnit=x
+                    break
+                  if iUnit==0:
+                   iUnit=len(Devices)+1
+                  Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="Switch",Used=1,DeviceID=unitname).Create()
+                 except Exception as e:
+                  Domoticz.Debug(str(e))
+                  return False
+               try:
+                 Devices[iUnit].Update(nValue=1,sValue="On")
+               except Exception as e:
+                 Domoticz.Debug(str(e))
+
          forceenergydev = False
          # workaround for Shelly Dimmer energy report routing
          if (len(mqttpath)>4) and (mqttpath[4] in ["power","energy"]):
@@ -950,6 +1006,38 @@ class BasePlugin:
               Domoticz.Debug('nValue: ' + str(Devices[iUnit].nValue) + ' -> ' + str(status))
               Domoticz.Debug('sValue: ' + Devices[iUnit].sValue + ' -> ' + dimmer)
               Devices[iUnit].Update(nValue=status, sValue=dimmer)
+            if self.powerread: # decode power property if found
+              if "power" in jmsg:
+               unitname = mqttpath[1]+"-"+mqttpath[3]+"-power"
+               iUnit = -1
+               for Device in Devices:
+                try:
+                 if (Devices[Device].DeviceID.strip() == unitname):
+                  iUnit = Device
+                  break
+                except:
+                 pass
+               if iUnit<0: # if device does not exists in Domoticz, than create it
+                 try:
+                  iUnit = 0
+                  for x in range(1,256):
+                   if x not in Devices:
+                    iUnit=x
+                    break
+                  if iUnit==0:
+                   iUnit=len(Devices)+1
+                  Domoticz.Device(Name=unitname, Unit=iUnit,Type=243,Subtype=29,Used=0,DeviceID=unitname).Create()
+                 except Exception as e:
+                  Domoticz.Debug(str(e))
+                  return False
+               try:
+                 sval = str(jmsg["power"])+";0"
+                 Devices[iUnit].Update(nValue=0,sValue=str(sval)) # update power value
+               except Exception as e:
+                 Domoticz.Debug(str(e))
+
+              return True
+
          # SENSOR type, not command->process - device ext temperature!
          elif (len(mqttpath)==4) and (mqttpath[2] == "ext_temperature"):
           unitname = mqttpath[1]+"-"+mqttpath[3]+"-temp"
