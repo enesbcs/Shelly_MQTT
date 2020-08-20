@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.0">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.1">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -647,6 +647,73 @@ class BasePlugin:
            Domoticz.Debug(str(e))
            return False
           return True
+         #----------------------------------------------------------------------
+         # Button device
+         elif( (len(mqttpath)>3) and "shellybutton" in mqttpath[1] and (mqttpath[2] == "input_event" or mqttpath[2] == "sensor" ) ):
+            unitname = str(mqttpath[1]).strip();
+            Domoticz.Debug(">>>> Unit name: " + unitname );
+            updatesensor = False;
+            if( mqttpath[2] == "sensor" ):
+                if( mqttpath[3] != "battery" ):
+                    return True;
+                updatesensor = True;
+            #Looking for the device
+            iUnit = -1
+            for Device in Devices:
+                try:
+                    if (Devices[Device].DeviceID.strip() == unitname):
+                        iUnit = Device
+                        break
+                except:
+                    pass
+            # if device does not exists in Domoticz, than create it
+            if iUnit < 0:
+                if( updatesensor ):
+                    Domoticz.Debug(">>>> Device not exists, cannot update status: " + unitname );
+                    return False;
+                try:
+                    # determine unit ID
+                    iUnit=len(Devices)+1
+                    for x in range(1,256):
+                        if x not in Devices:
+                            iUnit=x
+                            break;
+                    opt =  {"LevelActions": "|||||",
+                            "LevelNames": "Off|Single|Double|Triple|Long",
+                            "LevelOffHidden": "true",
+                            "SelectorStyle": "1"};
+                    devname = unitname+"-BUTTON1";
+                    Domoticz.Device( Name=devname, Unit=iUnit, TypeName="Selector Switch", Used=0, DeviceID=unitname ,Options=opt ).Create()
+                    Domoticz.Debug(">>>> Device added: Selector switch::" + devname + " unit: " + str(iUnit) );
+                except Exception as e:
+                    # Cennot create device
+                    Domoticz.Debug(str(e))
+                    return False
+            else:
+                Domoticz.Debug(">>>> Device found: unit ID: " + str(iUnit) );
+            # Device update
+            try:
+                if( updatesensor ):
+                    if( mqttpath[3] == "battery" ):
+                        Domoticz.Log("Update " + Devices[iUnit].Name + " battery level to: " + str(message) );
+                        Devices[iUnit].Update( nValue=Devices[iUnit].nValue,sValue=Devices[iUnit].sValue , BatteryLevel = int( message ) );
+                else:
+                    Domoticz.Debug(">>>> Device action: " + str(message) );
+                    # {"event":"S","event_cnt":1}
+                    # {"event":"SS","event_cnt":2}
+                    # {"event":"SSS","event_cnt":3}
+                    # {"event":"L","event_cnt":4}
+                    payload =  json.loads( message.replace("'",'"').lower() );
+                    if( "event" in payload ):
+                        # Convert event to selector switch strte
+                        events = { "s" : 10 , "ss" : 20 , "sss": 30 , "l" : 40 };
+                        case = events.get(  str(payload[ "event" ]) , 0 );
+                        Domoticz.Log("Update " + Devices[iUnit].Name + " selector to: " + str(case) );
+                        Devices[iUnit].Update(nValue=case,sValue=str(case));
+            except Exception as e:
+                Domoticz.Debug(str(e))
+                return False
+            return True
          # SENSOR type, not command->process ShellyFlood,Shelly Smoke (temp and battery)
          elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['temperature','battery']) and (("shellyflood" in mqttpath[1]) or ("shellysmoke" in mqttpath[1])):
           unitname = mqttpath[1]+"-temp"
