@@ -698,7 +698,7 @@ class BasePlugin:
                     # Update battery level
                     if( mqttpath[3] == "battery" ):
                         Domoticz.Log("Update " + Devices[iUnit].Name + " battery level to: " + str(message) );
-                        Devices[iUnit].Update( nValue=Devices[iUnit].nValue,sValue=Devices[iUnit].sValue , BatteryLevel = int( message ) );
+                        Devices[iUnit].Update( nValue=Devices[iUnit].nValue,sValue=Devices[iUnit].sValue , BatteryLevel = int( message ) , SuppressTriggers = True );
                 else:
                     # Update button status
                     Domoticz.Debug(">>>> Device action: " + str(message) );
