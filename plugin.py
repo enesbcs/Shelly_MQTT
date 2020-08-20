@@ -683,7 +683,8 @@ class BasePlugin:
                             "LevelOffHidden": "true",
                             "SelectorStyle": "1"};
                     devname = unitname+"-BUTTON1";
-                    Domoticz.Device( Name=devname, Unit=iUnit, TypeName="Selector Switch", Used=0, DeviceID=unitname ,Options=opt ).Create()
+                    # Image = 9 means "Generic On/Off switch"
+                    Domoticz.Device( Name=devname, Unit=iUnit, TypeName="Selector Switch", Used=0, DeviceID=unitname ,Options=opt, Image = 9 ).Create()
                     Domoticz.Debug(">>>> Device added: Selector switch::" + devname + " unit: " + str(iUnit) );
                 except Exception as e:
                     # Cennot create device
@@ -694,16 +695,20 @@ class BasePlugin:
             # Device update
             try:
                 if( updatesensor ):
+                    # Update battery level
                     if( mqttpath[3] == "battery" ):
                         Domoticz.Log("Update " + Devices[iUnit].Name + " battery level to: " + str(message) );
                         Devices[iUnit].Update( nValue=Devices[iUnit].nValue,sValue=Devices[iUnit].sValue , BatteryLevel = int( message ) );
                 else:
+                    # Update button status
                     Domoticz.Debug(">>>> Device action: " + str(message) );
+                    # 2020.08. button event types
                     # {"event":"S","event_cnt":1}
                     # {"event":"SS","event_cnt":2}
                     # {"event":"SSS","event_cnt":3}
                     # {"event":"L","event_cnt":4}
                     payload =  json.loads( message.replace("'",'"').lower() );
+                    # Button push event
                     if( "event" in payload ):
                         # Convert event to selector switch strte
                         events = { "s" : 10 , "ss" : 20 , "sss": 30 , "l" : 40 };
