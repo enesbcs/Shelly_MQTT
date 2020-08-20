@@ -65,6 +65,8 @@ Tested and working with:
  - Shelly Dimmer
  - Shelly Bulb RGBW
  - Shelly EM
+ - Shelly Button1
+ - Shelly Door Window 2
 
 **I can only support devices that i have. Thank you for your understanding.**
 
