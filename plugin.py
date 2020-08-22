@@ -328,6 +328,35 @@ class BasePlugin:
         Domoticz.Debug("onMQTTSubscribed")
 
     def onMQTTPublish(self, topic, message): # process incoming MQTT statuses
+        def searchdevice( devname ):
+            Domoticz.Debug( ">>> Looking for device: " + str(devname) );
+            unitID = -1;
+            for device in Devices:
+                # Domoticz.Log( ">>> Check device: " + str(Devices[device].DeviceID.strip()) );
+                try:
+                    if( Devices[device].DeviceID.strip() == devname ):
+                        unitID = device;
+                        break
+                except:
+                    pass
+            return unitID;
+        def adddevice( **kwargs ):
+            try:
+                iUnit = len(Devices)+1;
+                # Looking for possible device ID
+                for x in range(1,256):
+                    if x not in Devices:
+                        iUnit=x
+                        break
+                kwargs["Unit"] = iUnit;
+                # Create device
+                Domoticz.Log( "Adding device: " + str(unitname) + " parameters: " + str(kwargs));
+                Domoticz.Device( **kwargs ).Create()
+            except Exception as e:
+                Domoticz.Error(str(e))
+                return False
+            return True;
+
         if "/announce" in topic: # announce did not contain any information for us
          return False
         try:
@@ -720,31 +749,19 @@ class BasePlugin:
                 Domoticz.Debug(str(e))
                 return False
             return True
-         # SENSOR type, not command->process ShellyFlood,Shelly Smoke (temp and battery)
-         elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['temperature','battery']) and (("shellyflood" in mqttpath[1]) or ("shellysmoke" in mqttpath[1])):
+         # SENSOR type, not command->process ShellyFlood,Shelly Smoke, ShellyDW2 (temp and battery)
+         elif(  (len(mqttpath)>3) and (mqttpath[2] == "sensor") and
+                (mqttpath[3] in ['temperature','battery']) and
+                any( item in mqttpath[1] for item in ["shellyflood" , "shellysmoke", "shellydw2" ])
+         ):
           unitname = mqttpath[1]+"-temp"
           unitname = unitname.strip()
-          iUnit = -1
-          for Device in Devices:
-           try:
-            if (Devices[Device].DeviceID.strip() == unitname):
-             iUnit = Device
-             break
-           except:
-            pass
-          if iUnit<0: # if device does not exists in Domoticz, than create it
-            try:
-             iUnit = 0
-             for x in range(1,256):
-              if x not in Devices:
-               iUnit=x
-               break
-             if iUnit==0:
-              iUnit=len(Devices)+1
-             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Temperature",Used=1,DeviceID=unitname).Create() # create Temperature
-            except Exception as e:
-             Domoticz.Debug(str(e))
-             return False
+          iUnit = searchdevice( unitname );
+          # Domoticz.Log( ">>> Device: " + str(unitname) + " UnitID: " + str( iUnit ) );
+          if iUnit < 0:
+              if( adddevice( Name=unitname, TypeName="Temperature", Used=1, DeviceID=unitname ) == False ):
+                  Domoticz.Log( "Error adding device: " + str(unitname) );
+                  return False;
           stype = mqttpath[3].strip().lower()
           try:
            curval = Devices[iUnit].sValue
@@ -757,7 +774,7 @@ class BasePlugin:
           if stype=="battery":
            try:
             if int(Devices[iUnit].BatteryLevel) != int(mval):
-             Devices[iUnit].Update(nValue=0,sValue=str(curval),BatteryLevel=int(mval))
+             Devices[iUnit].Update(nValue=0,sValue=str(curval),BatteryLevel=int(mval),SuppressTriggers = True);
            except Exception as e:
             Domoticz.Debug(str(e))
           elif stype=="temperature":
@@ -919,37 +936,64 @@ class BasePlugin:
           except Exception as e:
               Domoticz.Debug(str(e))
               return False
-         # Switch sensor type, ShellyDW light sensor
-         elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['lux']):
-          unitname = mqttpath[1]+"-lux"
-          unitname = unitname.strip()
-          iUnit = -1
-          for Device in Devices:
-           try:
-            if (Devices[Device].DeviceID.strip() == unitname):
-             iUnit = Device
-             break
-           except:
-            pass
-          if iUnit<0: # if device does not exists in Domoticz, than create it
-            try:
-             iUnit = 0
-             for x in range(1,256):
-              if x not in Devices:
-               iUnit=x
-               break
-             if iUnit==0:
-              iUnit=len(Devices)+1
-             Domoticz.Device(Name=unitname, Unit=iUnit,Type=246,Subtype=1,Used=1,DeviceID=unitname).Create()
-            except Exception as e:
-             Domoticz.Debug(str(e))
-             return False
+         # Switch sensor type, ShellyDW,ShellyDW2 sensors
+         elif (
+                len(mqttpath) > 3 and mqttpath[2] == "sensor" and
+                mqttpath[3] in ["lux" , "tilt" , "vibration" , "illumination" , "act_reasons" ]
+         ):
+          # Every sensor type will be a separete device
+          unitname = str(mqttpath[1]+"-"+mqttpath[3]).strip();
+          # Sensor wakeup reason, just send to the log
+          if( mqttpath[3] == "act_reasons" ):
+              Domoticz.Log( "Device " + str(unitname) + " wakeup reason: " + str(message).strip(" []") );
+              return True;
+          iUnit = searchdevice( unitname );
+          # if device does not exists than create it
+          if iUnit < 0:
+             devparams = {  "Name" : unitname , "Unit" : iUnit , "Used" : 1 , "DeviceID" : unitname };
+             sensors = { # 246 Lux; 1 Lux : Illumination (sValue: "float")
+                         "lux" :        { "Type" : 246 , "Subtype" : 1 } ,
+                         # 243 General ; 31 Custom Sensor (nValue: 0, sValue: "floatValue"), Options: {'Custom': '1;<axisUnits>'}
+                         # FIXME: Options:: The axis label do not show in domoticz
+                         "tilt":        { "Type" : 243 , "Subtype" : 31 , "Options" : { "Tilt" : "1;Degree"} } ,
+                         # 244 Light/Switch; 73 Switch; 2 Contact Statuses: Open: nValue = 1 Closed: nValue = 0
+                         "vibration":   { "Type" : 244 , "Subtype" : 73 , "Switchtype" : 2 },
+                         # Image 19 SUN
+                         "illumination":{ "TypeName" : "Selector Switch" , "Used" : 0 , "Image" : 19 ,
+                                                "Options" : {   "LevelActions": "||||",
+                                                                "LevelNames": "Off|bright|twilight|dark|unknown",
+                                                                "LevelOffHidden": "true",
+                                                                "SelectorStyle": "1"
+                                                            }
+                                        }
+                        };
+             try:
+                 # Merge device specific parameters
+                 devparams.update( **sensors[mqttpath[3]] );
+             except:
+                 Domoticz.Status( "Device " + str(unitname) + " unhandled sensor type: " + str(mqttpath[3]) );
+                 return False;
+             # Create the Domoticz device
+             if( adddevice( **devparams ) == False ):
+                 Domoticz.Status( "Error adding device: " + str(unitname) );
+                 return False;
           try:
-           mval = float(message)
-          except:
-           mval = str(message).strip()
-          try:
-            Devices[iUnit].Update(nValue=0,sValue=str(mval))
+            if( mqttpath[3] == "vibration" ):
+                value = 1 if int( message ) == 1 else 0;
+                if( Devices[iUnit].nValue != value ):
+                    Devices[iUnit].Update(nValue = value ,sValue=""  );
+                    Domoticz.Log("Update " + Devices[iUnit].Name + " to: " + str(value) );
+            elif( mqttpath[3] == "illumination" ):
+                state = { "bright" : 10 , "twilight" : 20 , "dark": 30 };
+                case = state.get( str(message).strip() , 40 );
+                if( Devices[iUnit].sValue != str(case) ):
+                    Domoticz.Log("Update " + Devices[iUnit].Name + " selector to: " + str(case) );
+                    Devices[iUnit].Update(nValue=case,sValue=str(case));
+            else:
+                value = str(message).strip();
+                if( Devices[iUnit].sValue != value ):
+                    Domoticz.Log("Update " + Devices[iUnit].Name + " to: " + str(value) );
+                    Devices[iUnit].Update( nValue = 0, sValue = value );
             return True
           except Exception as e:
             Domoticz.Debug(str(e))
