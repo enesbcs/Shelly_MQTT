@@ -351,11 +351,11 @@ class BasePlugin:
                 kwargs["Unit"] = iUnit;
                 # Create device
                 Domoticz.Log( "Adding device: " + str(unitname) + " parameters: " + str(kwargs));
-                Domoticz.Device( **kwargs ).Create()
+                Domoticz.Device( **kwargs ).Create();
             except Exception as e:
-                Domoticz.Error(str(e))
-                return False
-            return True;
+                Domoticz.Error(str(e));
+                return -1;
+            return iUnit;
 
         if "/announce" in topic: # announce did not contain any information for us
          return False
@@ -687,38 +687,26 @@ class BasePlugin:
                     return True;
                 updatesensor = True;
             #Looking for the device
-            iUnit = -1
-            for Device in Devices:
-                try:
-                    if (Devices[Device].DeviceID.strip() == unitname):
-                        iUnit = Device
-                        break
-                except:
-                    pass
+            iUnit = searchdevice( unitname );
             # if device does not exists in Domoticz, than create it
             if iUnit < 0:
                 if( updatesensor ):
                     Domoticz.Debug(">>>> Device not exists, cannot update status: " + unitname );
                     return False;
-                try:
-                    # determine unit ID
-                    iUnit=len(Devices)+1
-                    for x in range(1,256):
-                        if x not in Devices:
-                            iUnit=x
-                            break;
-                    opt =  {"LevelActions": "|||||",
-                            "LevelNames": "Off|Single|Double|Triple|Long",
-                            "LevelOffHidden": "true",
-                            "SelectorStyle": "1"};
-                    devname = unitname+"-BUTTON1";
-                    # Image = 9 means "Generic On/Off switch"
-                    Domoticz.Device( Name=devname, Unit=iUnit, TypeName="Selector Switch", Used=0, DeviceID=unitname ,Options=opt, Image = 9 ).Create()
-                    Domoticz.Debug(">>>> Device added: Selector switch::" + devname + " unit: " + str(iUnit) );
-                except Exception as e:
-                    # Cennot create device
-                    Domoticz.Debug(str(e))
-                    return False
+                # Image = 9 means "Generic On/Off switch"
+                devparams = {   "Name" : unitname+"-button1" , "Unit" : iUnit ,
+                                "TypeName" : "Selector Switch", "Used" : 1 , "DeviceID" : unitname , "Image" : 9 ,
+                                "Options" : {   "LevelActions": "|||||",
+                                                "LevelNames": "Off|Single|Double|Triple|Long",
+                                                "LevelOffHidden": "true",
+                                                "SelectorStyle": "1"
+                                            }
+                            };
+                # Create the Domoticz device
+                iUnit = adddevice( **devparams );
+                if( iUnit < 0 ):
+                    Domoticz.Status( "Error adding device: " + str(unitname) );
+                    return False;
             else:
                 Domoticz.Debug(">>>> Device found: unit ID: " + str(iUnit) );
             # Device update
@@ -974,7 +962,8 @@ class BasePlugin:
                  Domoticz.Status( "Device " + str(unitname) + " unhandled sensor type: " + str(mqttpath[3]) );
                  return False;
              # Create the Domoticz device
-             if( adddevice( **devparams ) == False ):
+             iUnit = adddevice( **devparams );
+             if(  iUnit < 0 ):
                  Domoticz.Status( "Error adding device: " + str(unitname) );
                  return False;
           try:
