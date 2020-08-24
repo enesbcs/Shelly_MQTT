@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.1">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.2">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -144,12 +144,16 @@ class BasePlugin:
         if self.mqttClient is None:
          return False
         Domoticz.Debug("Command: " + Command + " (" + str(Level) + ") Color:" + Color)
+        device_id = ""
         try:
          device = Devices[Unit]
          devname = device.DeviceID.replace("shellyplug-s","shellyplugs",1) # ugly fix for ShellyPlug-S "-"
          device_id = devname.split('-') # get device name from DeviceID field
         except Exception as e:
-         Domoticz.Debug(str(e))
+         Domoticz.Error("Device has no ID "+str(Unit)+" "+str(e))
+         return False
+        if "-" not in devname.strip():
+         Domoticz.Debug("Unsupported device ID")
          return False
         relnum = -1
         try:
@@ -329,33 +333,36 @@ class BasePlugin:
 
     def onMQTTPublish(self, topic, message): # process incoming MQTT statuses
         def searchdevice( devname ):
-            Domoticz.Debug( ">>> Looking for device: " + str(devname) );
-            unitID = -1;
+            devname = str(devname).strip()
+            if "-" not in devname:
+             return -1
+            Domoticz.Debug( ">>> Looking for device: " + str(devname) )
+            unitID = -1
             for device in Devices:
-                # Domoticz.Log( ">>> Check device: " + str(Devices[device].DeviceID.strip()) );
+#                Domoticz.Log( ">>> Check device: " + str(Devices[device].DeviceID.strip()) )
                 try:
                     if( Devices[device].DeviceID.strip() == devname ):
-                        unitID = device;
+                        unitID = device
                         break
                 except:
                     pass
-            return unitID;
+            return unitID
         def adddevice( **kwargs ):
             try:
-                iUnit = len(Devices)+1;
+                iUnit = len(Devices)+1
                 # Looking for possible device ID
                 for x in range(1,256):
                     if x not in Devices:
                         iUnit=x
                         break
-                kwargs["Unit"] = iUnit;
+                kwargs["Unit"] = iUnit
                 # Create device
-                Domoticz.Log( "Adding device: " + str(unitname) + " parameters: " + str(kwargs));
-                Domoticz.Device( **kwargs ).Create();
+                Domoticz.Log( "Adding device: " + str(unitname) + " parameters: " + str(kwargs))
+                Domoticz.Device( **kwargs ).Create()
             except Exception as e:
-                Domoticz.Error(str(e));
-                return -1;
-            return iUnit;
+                Domoticz.Error(str(e))
+                return -1
+            return iUnit
 
         if "/announce" in topic: # announce did not contain any information for us
          return False
@@ -371,26 +378,11 @@ class BasePlugin:
          if self.alive: # if device heartbeat enabled
            if self._updatedevice(str(mqttpath[1])): # if update needed
                unitname = mqttpath[1]+"-online"
-               iUnit = -1
-               for Device in Devices:
-                try:
-                 if (Devices[Device].DeviceID.strip() == unitname):
-                  iUnit = Device
-                  break
-                except:
-                 pass
-               if iUnit<0: # if device does not exists in Domoticz, than create it
-                 try:
-                  iUnit = 0
-                  for x in range(1,256):
-                   if x not in Devices:
-                    iUnit=x
-                    break
-                  if iUnit==0:
-                   iUnit=len(Devices)+1
-                  Domoticz.Device(Name=unitname, Unit=iUnit,TypeName="Switch",Used=1,DeviceID=unitname).Create()
-                 except Exception as e:
-                  Domoticz.Debug(str(e))
+               iUnit = searchdevice(unitname)
+               if iUnit<0:
+                devparams = { "Name" : unitname, "Unit": iUnit, "TypeName" :"Switch", "Used":1, "DeviceID" : unitname}
+                iUnit = adddevice(**devparams)
+               if iUnit<0:
                   return False
                try:
                  Devices[iUnit].Update(nValue=1,sValue="On")
@@ -439,14 +431,7 @@ class BasePlugin:
            unitname=mqttpath[1]+"-"+str(funcid)+"-current" # Shelly EM current meter
           elif subval=="pf":
            unitname=mqttpath[1]+"-"+str(funcid)+"-pf" # Shelly EM pf
-          iUnit = -1
-          for Device in Devices:
-           try:
-            if (Devices[Device].DeviceID.strip() == unitname):
-             iUnit = Device
-             break
-           except:
-            pass
+          iUnit = searchdevice(unitname)
           if iUnit<0: # if device does not exists in Domoticz, than create it
             try:
              iUnit = 0
@@ -535,14 +520,7 @@ class BasePlugin:
           else:
            unitname = mqttpath[1]+"-"+mqttpath[3]+"-roller"
           unitname = unitname.strip()
-          iUnit = -1
-          for Device in Devices:
-           try:
-            if (Devices[Device].DeviceID.strip() == unitname):
-             iUnit = Device
-             break
-           except:
-            pass
+          iUnit = searchdevice(unitname)
           if iUnit<0: # if device does not exists in Domoticz, than create it
             try:
              iUnit = 0
@@ -602,27 +580,12 @@ class BasePlugin:
          elif (len(mqttpath)>3) and (mqttpath[2] == "input") and (mqttpath[len(mqttpath)-1]!="command"):
           unitname = mqttpath[1]+"-"+mqttpath[3]+"-input"
           unitname = unitname.strip()
-          iUnit = -1
-          for Device in Devices:
-           try:
-            if (Devices[Device].DeviceID.strip() == unitname):
-             iUnit = Device
-             break
-           except:
-            pass
+          iUnit = searchdevice(unitname)
           if iUnit<0: # if device does not exists in Domoticz, than create it
-            try:
-             iUnit = 0
-             for x in range(1,256):
-              if x not in Devices:
-               iUnit=x
-               break
-             if iUnit==0:
-              iUnit=len(Devices)+1
-             Domoticz.Device(Name=unitname+" BUTTON", Unit=iUnit,TypeName="Switch",Used=0,DeviceID=unitname).Create()
-            except Exception as e:
-             Domoticz.Debug(str(e))
-             return False
+            devparams = { "Name" : unitname+" BUTTON", "Unit": iUnit, "TypeName" :"Switch", "Used":0, "DeviceID" : unitname}
+            iUnit = adddevice(**devparams)
+          if iUnit<0:
+            return False
           try:
            if str(message).lower=="on" or str(message)=="1":
             scmd = "on"
@@ -641,27 +604,12 @@ class BasePlugin:
          elif (len(mqttpath)>3) and (mqttpath[2] == "longpush") and (mqttpath[len(mqttpath)-1]!="command"):
           unitname = mqttpath[1]+"-"+mqttpath[3]+"-lpush"
           unitname = unitname.strip()
-          iUnit = -1
-          for Device in Devices:
-           try:
-            if (Devices[Device].DeviceID.strip() == unitname):
-             iUnit = Device
-             break
-           except:
-            pass
+          iUnit = searchdevice(unitname)
           if iUnit<0: # if device does not exists in Domoticz, than create it
-            try:
-             iUnit = 0
-             for x in range(1,256):
-              if x not in Devices:
-               iUnit=x
-               break
-             if iUnit==0:
-              iUnit=len(Devices)+1
-             Domoticz.Device(Name=unitname+" LONGPUSH", Unit=iUnit,TypeName="Switch",Used=0,DeviceID=unitname).Create()
-            except Exception as e:
-             Domoticz.Debug(str(e))
-             return False
+            devparams = { "Name" : unitname+" LONGPUSH", "Unit": iUnit, "TypeName" :"Switch", "Used":0, "DeviceID" : unitname}
+            iUnit = adddevice(**devparams)
+          if iUnit<0:
+            return False
           try:
            if str(message).lower=="on" or str(message)=="1":
             scmd = "on"
@@ -679,20 +627,20 @@ class BasePlugin:
          #----------------------------------------------------------------------
          # Button device
          elif( (len(mqttpath)>3) and "shellybutton" in mqttpath[1] and (mqttpath[2] == "input_event" or mqttpath[2] == "sensor" ) ):
-            unitname = str(mqttpath[1]).strip();
-            Domoticz.Debug(">>>> Unit name: " + unitname );
-            updatesensor = False;
+            unitname = str(mqttpath[1]).strip()
+            Domoticz.Debug(">>>> Unit name: " + unitname )
+            updatesensor = False
             if( mqttpath[2] == "sensor" ):
                 if( mqttpath[3] != "battery" ):
-                    return True;
-                updatesensor = True;
+                    return True
+                updatesensor = True
             #Looking for the device
-            iUnit = searchdevice( unitname );
+            iUnit = searchdevice( unitname )
             # if device does not exists in Domoticz, than create it
             if iUnit < 0:
                 if( updatesensor ):
-                    Domoticz.Debug(">>>> Device not exists, cannot update status: " + unitname );
-                    return False;
+                    Domoticz.Debug(">>>> Device not exists, cannot update status: " + unitname )
+                    return False
                 # Image = 9 means "Generic On/Off switch"
                 devparams = {   "Name" : unitname+"-button1" , "Unit" : iUnit ,
                                 "TypeName" : "Selector Switch", "Used" : 1 , "DeviceID" : unitname , "Image" : 9 ,
@@ -703,36 +651,36 @@ class BasePlugin:
                                             }
                             };
                 # Create the Domoticz device
-                iUnit = adddevice( **devparams );
+                iUnit = adddevice( **devparams )
                 if( iUnit < 0 ):
-                    Domoticz.Status( "Error adding device: " + str(unitname) );
-                    return False;
+                    Domoticz.Status( "Error adding device: " + str(unitname) )
+                    return False
             else:
-                Domoticz.Debug(">>>> Device found: unit ID: " + str(iUnit) );
+                Domoticz.Debug(">>>> Device found: unit ID: " + str(iUnit) )
             # Device update
             try:
                 if( updatesensor ):
                     # Update battery level
                     if( mqttpath[3] == "battery" ):
                         if( int( message ) != int( Devices[iUnit].BatteryLevel ) ):
-                            Domoticz.Log("Update " + Devices[iUnit].Name + " battery level to: " + str(message) );
-                            Devices[iUnit].Update( nValue=Devices[iUnit].nValue,sValue=Devices[iUnit].sValue , BatteryLevel = int( message ) , SuppressTriggers = True );
+                            Domoticz.Log("Update " + Devices[iUnit].Name + " battery level to: " + str(message) )
+                            Devices[iUnit].Update( nValue=Devices[iUnit].nValue,sValue=Devices[iUnit].sValue , BatteryLevel = int( message ) , SuppressTriggers = True )
                 else:
                     # Update button status
-                    Domoticz.Debug(">>>> Device action: " + str(message) );
+                    Domoticz.Debug(">>>> Device action: " + str(message) )
                     # 2020.08. button event types
                     # {"event":"S","event_cnt":1}
                     # {"event":"SS","event_cnt":2}
                     # {"event":"SSS","event_cnt":3}
                     # {"event":"L","event_cnt":4}
-                    payload =  json.loads( message.replace("'",'"').lower() );
+                    payload =  json.loads( message.replace("'",'"').lower() )
                     # Button push event
                     if( "event" in payload ):
                         # Convert event to selector switch strte
-                        events = { "s" : 10 , "ss" : 20 , "sss": 30 , "l" : 40 };
-                        case = events.get(  str(payload[ "event" ]) , 0 );
-                        Domoticz.Log("Update " + Devices[iUnit].Name + " selector to: " + str(case) );
-                        Devices[iUnit].Update(nValue=case,sValue=str(case));
+                        events = { "s" : 10 , "ss" : 20 , "sss": 30 , "l" : 40 }
+                        case = events.get(  str(payload[ "event" ]) , 0 )
+                        Domoticz.Log("Update " + Devices[iUnit].Name + " selector to: " + str(case) )
+                        Devices[iUnit].Update(nValue=case,sValue=str(case))
             except Exception as e:
                 Domoticz.Debug(str(e))
                 return False
@@ -744,12 +692,12 @@ class BasePlugin:
          ):
           unitname = mqttpath[1]+"-temp"
           unitname = unitname.strip()
-          iUnit = searchdevice( unitname );
-          # Domoticz.Log( ">>> Device: " + str(unitname) + " UnitID: " + str( iUnit ) );
+          iUnit = searchdevice( unitname )
+          # Domoticz.Log( ">>> Device: " + str(unitname) + " UnitID: " + str( iUnit ) )
           if iUnit < 0:
-              if( adddevice( Name=unitname, TypeName="Temperature", Used=1, DeviceID=unitname ) == False ):
-                  Domoticz.Log( "Error adding device: " + str(unitname) );
-                  return False;
+              if( adddevice( Name=unitname, TypeName="Temperature", Used=1, DeviceID=unitname ) < 0 ):
+                  Domoticz.Log( "Error adding device: " + str(unitname) )
+                  return False
           stype = mqttpath[3].strip().lower()
           try:
            curval = Devices[iUnit].sValue
@@ -762,7 +710,7 @@ class BasePlugin:
           if stype=="battery":
            try:
             if int(Devices[iUnit].BatteryLevel) != int(mval):
-             Devices[iUnit].Update(nValue=0,sValue=str(curval),BatteryLevel=int(mval),SuppressTriggers = True);
+             Devices[iUnit].Update(nValue=0,sValue=str(curval),BatteryLevel=int(mval),SuppressTriggers = True)
            except Exception as e:
             Domoticz.Debug(str(e))
           elif stype=="temperature":
@@ -775,27 +723,12 @@ class BasePlugin:
 #         elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['temperature','humidity','battery']): # collision with ShellyDW!
           unitname = mqttpath[1]+"-sensor"
           unitname = unitname.strip()
-          iUnit = -1
-          for Device in Devices:
-           try:
-            if (Devices[Device].DeviceID.strip() == unitname):
-             iUnit = Device
-             break
-           except:
-            pass
+          iUnit = searchdevice(unitname)
           if iUnit<0: # if device does not exists in Domoticz, than create it
-            try:
-             iUnit = 0
-             for x in range(1,256):
-              if x not in Devices:
-               iUnit=x
-               break
-             if iUnit==0:
-              iUnit=len(Devices)+1
-             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Temp+Hum",Used=1,DeviceID=unitname).Create() # create Temp+Hum Type=82
-            except Exception as e:
-             Domoticz.Debug(str(e))
-             return False
+            devparams = { "Name" : unitname, "Unit": iUnit, "TypeName" :"Temp+Hum", "Used":1, "DeviceID" : unitname}
+            iUnit = adddevice(**devparams)
+          if iUnit<0:
+            return False
           stype = mqttpath[3].strip().lower()
           try:
            curval = Devices[iUnit].sValue
@@ -848,27 +781,12 @@ class BasePlugin:
          elif (len(mqttpath)==3) and (mqttpath[2] == "temperature"):
           unitname = mqttpath[1]+"-temp"
           unitname = unitname.strip()
-          iUnit = -1
-          for Device in Devices:
-           try:
-            if (Devices[Device].DeviceID.strip() == unitname):
-             iUnit = Device
-             break
-           except:
-            pass
+          iUnit = searchdevice(unitname)
           if iUnit<0: # if device does not exists in Domoticz, than create it
-            try:
-             iUnit = 0
-             for x in range(1,256):
-              if x not in Devices:
-               iUnit=x
-               break
-             if iUnit==0:
-              iUnit=len(Devices)+1
-             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Temperature",Used=0,DeviceID=unitname).Create()
-            except Exception as e:
-             Domoticz.Debug(str(e))
-             return False
+            devparams = { "Name" : unitname, "Unit": iUnit, "TypeName" :"Temperature", "Used":0, "DeviceID" : unitname}
+            iUnit = adddevice(**devparams)
+          if iUnit<0:
+            return False
           try:
            mval = float(message)
           except:
@@ -883,14 +801,7 @@ class BasePlugin:
          elif (len(mqttpath)>3) and (mqttpath[2] == "sensor") and (mqttpath[3] in ['flood','smoke','motion','state']):
           unitname = mqttpath[1]+"-"+mqttpath[3]
           unitname = unitname.strip()
-          iUnit = -1
-          for Device in Devices:
-           try:
-            if (Devices[Device].DeviceID.strip() == unitname):
-             iUnit = Device
-             break
-           except:
-            pass
+          iUnit = searchdevice(unitname)
           if iUnit<0: # if device does not exists in Domoticz, than create it
             try:
              iUnit = 0
@@ -930,15 +841,15 @@ class BasePlugin:
                 mqttpath[3] in ["lux" , "tilt" , "vibration" , "illumination" , "act_reasons" ]
          ):
           # Every sensor type will be a separete device
-          unitname = str(mqttpath[1]+"-"+mqttpath[3]).strip();
+          unitname = str(mqttpath[1]+"-"+mqttpath[3]).strip()
           # Sensor wakeup reason, just send to the log
           if( mqttpath[3] == "act_reasons" ):
-              Domoticz.Log( "Device " + str(unitname) + " wakeup reason: " + str(message).strip(" []") );
-              return True;
-          iUnit = searchdevice( unitname );
+              Domoticz.Log( "Device " + str(unitname) + " wakeup reason: " + str(message).strip(" []") )
+              return True
+          iUnit = searchdevice( unitname )
           # if device does not exists than create it
           if iUnit < 0:
-             devparams = {  "Name" : unitname , "Unit" : iUnit , "Used" : 1 , "DeviceID" : unitname };
+             devparams = {  "Name" : unitname , "Unit" : iUnit , "Used" : 1 , "DeviceID" : unitname }
              sensors = { # 246 Lux; 1 Lux : Illumination (sValue: "float")
                          "lux" :        { "Type" : 246 , "Subtype" : 1 } ,
                          # 243 General ; 31 Custom Sensor (nValue: 0, sValue: "floatValue"), Options: {'Custom': '1;<axisUnits>'}
@@ -957,32 +868,32 @@ class BasePlugin:
                         };
              try:
                  # Merge device specific parameters
-                 devparams.update( **sensors[mqttpath[3]] );
+                 devparams.update( **sensors[mqttpath[3]] )
              except:
-                 Domoticz.Status( "Device " + str(unitname) + " unhandled sensor type: " + str(mqttpath[3]) );
-                 return False;
+                 Domoticz.Status( "Device " + str(unitname) + " unhandled sensor type: " + str(mqttpath[3]) )
+                 return False
              # Create the Domoticz device
-             iUnit = adddevice( **devparams );
+             iUnit = adddevice( **devparams )
              if(  iUnit < 0 ):
-                 Domoticz.Status( "Error adding device: " + str(unitname) );
-                 return False;
+                 Domoticz.Status( "Error adding device: " + str(unitname) )
+                 return False
           try:
             if( mqttpath[3] == "vibration" ):
                 value = 1 if int( message ) == 1 else 0;
                 if( Devices[iUnit].nValue != value ):
-                    Devices[iUnit].Update(nValue = value ,sValue=""  );
-                    Domoticz.Log("Update " + Devices[iUnit].Name + " to: " + str(value) );
+                    Devices[iUnit].Update(nValue = value ,sValue=""  )
+                    Domoticz.Log("Update " + Devices[iUnit].Name + " to: " + str(value) )
             elif( mqttpath[3] == "illumination" ):
-                state = { "bright" : 10 , "twilight" : 20 , "dark": 30 };
-                case = state.get( str(message).strip() , 40 );
+                state = { "bright" : 10 , "twilight" : 20 , "dark": 30 }
+                case = state.get( str(message).strip() , 40 )
                 if( Devices[iUnit].sValue != str(case) ):
-                    Domoticz.Log("Update " + Devices[iUnit].Name + " selector to: " + str(case) );
-                    Devices[iUnit].Update(nValue=case,sValue=str(case));
+                    Domoticz.Log("Update " + Devices[iUnit].Name + " selector to: " + str(case) )
+                    Devices[iUnit].Update(nValue=case,sValue=str(case))
             else:
-                value = str(message).strip();
+                value = str(message).strip()
                 if( Devices[iUnit].sValue != value ):
-                    Domoticz.Log("Update " + Devices[iUnit].Name + " to: " + str(value) );
-                    Devices[iUnit].Update( nValue = 0, sValue = value );
+                    Domoticz.Log("Update " + Devices[iUnit].Name + " to: " + str(value) )
+                    Devices[iUnit].Update( nValue = 0, sValue = value )
             return True
           except Exception as e:
             Domoticz.Debug(str(e))
@@ -995,14 +906,7 @@ class BasePlugin:
            mval = str(message).strip()
           unitname = mqttpath[1]+"-state"
           unitname = unitname.strip()
-          iUnit = -1
-          for Device in Devices:
-           try:
-            if (Devices[Device].DeviceID.strip() == unitname):
-             iUnit = Device
-             break
-           except:
-            pass
+          iUnit = searchdevice(unitname)
           if iUnit>=0: # only update existing device
            try:
             curvaln = Devices[iUnit].nValue
@@ -1017,14 +921,7 @@ class BasePlugin:
             Domoticz.Debug(str(e))
           unitname = mqttpath[1]+"-lux"
           unitname = unitname.strip()
-          iUnit = -1
-          for Device in Devices:
-           try:
-            if (Devices[Device].DeviceID.strip() == unitname):
-             iUnit = Device
-             break
-           except:
-            pass
+          iUnit = searchdevice(unitname)
           if iUnit>=0: # only update existing device
            try:
             curval = Devices[iUnit].sValue
@@ -1045,14 +942,7 @@ class BasePlugin:
           else:
            unitname = unitname+"-rgb"
           unitname = unitname.strip()
-          iUnit = -1
-          for Device in Devices:
-           try:
-            if (Devices[Device].DeviceID.strip() == unitname):
-             iUnit = Device
-             break
-           except:
-            pass
+          iUnit = searchdevice(unitname)
           if iUnit<0: # if device does not exists in Domoticz, than create it
             try:
              iUnit = 0
@@ -1115,27 +1005,12 @@ class BasePlugin:
             if self.powerread: # decode power property if found
               if "power" in jmsg:
                unitname = mqttpath[1]+"-"+mqttpath[3]+"-power"
-               iUnit = -1
-               for Device in Devices:
-                try:
-                 if (Devices[Device].DeviceID.strip() == unitname):
-                  iUnit = Device
-                  break
-                except:
-                 pass
+               iUnit = searchdevice(unitname)
                if iUnit<0: # if device does not exists in Domoticz, than create it
-                 try:
-                  iUnit = 0
-                  for x in range(1,256):
-                   if x not in Devices:
-                    iUnit=x
-                    break
-                  if iUnit==0:
-                   iUnit=len(Devices)+1
-                  Domoticz.Device(Name=unitname, Unit=iUnit,Type=243,Subtype=29,Used=0,DeviceID=unitname).Create()
-                 except Exception as e:
-                  Domoticz.Debug(str(e))
-                  return False
+                 devparams = { "Name" : unitname, "Unit": iUnit, "Type": 243, "Subtype": 29, "Used":0, "DeviceID" : unitname}
+                 iUnit = adddevice(**devparams)
+               if iUnit<0:
+                 return False
                try:
                  sval = str(jmsg["power"])+";0"
                  Devices[iUnit].Update(nValue=0,sValue=str(sval)) # update power value
@@ -1148,27 +1023,12 @@ class BasePlugin:
          elif (len(mqttpath)==4) and (mqttpath[2] == "ext_temperature"):
           unitname = mqttpath[1]+"-"+mqttpath[3]+"-temp"
           unitname = unitname.strip()
-          iUnit = -1
-          for Device in Devices:
-           try:
-            if (Devices[Device].DeviceID.strip() == unitname):
-             iUnit = Device
-             break
-           except:
-            pass
+          iUnit = searchdevice(unitname)
           if iUnit<0: # if device does not exists in Domoticz, than create it
-            try:
-             iUnit = 0
-             for x in range(1,256):
-              if x not in Devices:
-               iUnit=x
-               break
-             if iUnit==0:
-              iUnit=len(Devices)+1
-             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Temperature",Used=0,DeviceID=unitname).Create()
-            except Exception as e:
-             Domoticz.Debug(str(e))
-             return False
+            devparams = { "Name" : unitname, "Unit": iUnit, "TypeName" :"Temperature", "Used":0, "DeviceID" : unitname}
+            iUnit = adddevice(**devparams)
+          if iUnit<0:
+            return False
           try:
            mval = float(message)
           except:
@@ -1183,27 +1043,12 @@ class BasePlugin:
          elif (len(mqttpath)==4) and (mqttpath[2] == "ext_humidity"):
           unitname = mqttpath[1]+"-"+mqttpath[3]+"-hum"
           unitname = unitname.strip()
-          iUnit = -1
-          for Device in Devices:
-           try:
-            if (Devices[Device].DeviceID.strip() == unitname):
-             iUnit = Device
-             break
-           except:
-            pass
+          iUnit = searchdevice(unitname)
           if iUnit<0: # if device does not exists in Domoticz, than create it
-            try:
-             iUnit = 0
-             for x in range(1,256):
-              if x not in Devices:
-               iUnit=x
-               break
-             if iUnit==0:
-              iUnit=len(Devices)+1
-             Domoticz.Device(Name=unitname, Unit=iUnit, TypeName="Humidity",Used=0,DeviceID=unitname).Create()
-            except Exception as e:
-             Domoticz.Debug(str(e))
-             return False
+            devparams = { "Name" : unitname, "Unit": iUnit, "TypeName" :"Humidity", "Used":0, "DeviceID" : unitname}
+            iUnit = adddevice(**devparams)
+          if iUnit<0:
+            return False
           try:
            mval = float(message)
           except:
@@ -1231,6 +1076,10 @@ def onStop():
 def onConnect(Connection, Status, Description):
     global _plugin
     _plugin.onConnect(Connection, Status, Description)
+
+def onDeviceModified(Unit):
+    global _plugin
+    return
 
 def onDisconnect(Connection):
     global _plugin
