@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.2">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.3">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -275,6 +275,19 @@ class BasePlugin:
              else: # Handle standard RGB device
               scmd = '{"turn":"on","mode":"color","red":'+str(color["r"])+',"green":'+str(color["g"])+',"blue":'+str(color["b"]) +',"white":'+str(color["cw"])+'}'
              Domoticz.Debug('RGB Color:' + scmd)
+             try:
+              self.mqttClient.publish(mqttpath, scmd)
+             except Exception as e:
+              Domoticz.Debug(str(e))
+            elif device_id[3]=="dimmer": # BulbDuo
+             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/light/"+device_id[2]+"/set"
+             if int(Level)<=0:
+              state = "off"
+             else:
+              state = "on"
+             wlevel = int((255-int(color["ww"]))/2.55) # translate range 255 to range 100
+             scmd = '{"turn":"'+str(state)+'","white":'+str(wlevel)+',"brightness":'+str(Level)+'}'
+             Domoticz.Debug('WW Dimmer:' + scmd)
              try:
               self.mqttClient.publish(mqttpath, scmd)
              except Exception as e:
@@ -685,6 +698,57 @@ class BasePlugin:
                 Domoticz.Debug(str(e))
                 return False
             return True
+         #----------------------------------------------------------------------
+         # Generic input_event
+         elif( (len(mqttpath)>3) and (mqttpath[2] == "input_event") ):
+            unitname = mqttpath[1]+"-"+mqttpath[2]+str(mqttpath[3])
+#            Domoticz.Debug(">>>> Unit name: " + unitname )
+            #Looking for the device
+            iUnit = searchdevice( unitname )
+            # if device does not exists in Domoticz, than create it
+            if iUnit < 0:
+                # Image = 9 means "Generic On/Off switch"
+                devparams = {   "Name" : unitname, "Unit" : iUnit ,
+                                "TypeName" : "Selector Switch", "Used" : 1 , "DeviceID" : unitname , "Image" : 9 ,
+                                "Options" : {   "LevelActions": "|||||",
+                                                "LevelNames": "Off|Single|Double|Triple|Long|Single+Long|Long+Single",
+                                                "LevelOffHidden": "false",
+                                                "SelectorStyle": "1"
+                                            }
+                            };
+                # Create the Domoticz device
+                iUnit = adddevice( **devparams )
+                if( iUnit < 0 ):
+                    Domoticz.Status( "Error adding device: " + str(unitname) )
+                    return False
+#            else:
+#                Domoticz.Debug(">>>> Device found: unit ID: " + str(iUnit) )
+            # Device update
+            try:
+                    # Update button status
+#                    Domoticz.Debug(">>>> Device action: " + str(message) )
+                    payload =  json.loads( message.replace("'",'"').lower() )
+                    # Button push event
+                    if ("event" in payload):
+                        # Convert event to selector switch state
+                        events = { "s" : 10 , "ss" : 20 , "sss": 30 , "l" : 40, "sl": 50, "ls" : 60 }
+                        case = events.get(  str(payload[ "event" ]) , 0 ) # get event type
+                        ncnt = str(payload[ "event_cnt" ]) # get last event ID
+                        try:
+                         cnt = int(Devices[iUnit].Description) # get old event ID if exist
+                        except Exception as e:
+                         cnt = -1
+                        try:
+                         ncnt = int(ncnt)
+                        except:
+                         ncnt = 0
+                        if (int(Devices[iUnit].nValue) != int(case)) or (ncnt != cnt): # update when type or counter changed
+                         Domoticz.Log("Update " + Devices[iUnit].Name + " selector to: " + str(case) )
+                         Devices[iUnit].Update(nValue=case,sValue=str(case),Description=str(ncnt))
+            except Exception as e:
+                Domoticz.Debug(str(e))
+                return False
+            return True
          # SENSOR type, not command->process ShellyFlood,Shelly Smoke, ShellyDW2 (temp and battery)
          elif(  (len(mqttpath)>3) and (mqttpath[2] == "sensor") and
                 (mqttpath[3] in ['temperature','battery']) and
@@ -952,7 +1016,9 @@ class BasePlugin:
                break
              if iUnit==0:
               iUnit=len(Devices)+1
-             if (mqttpath[2] in ["white","light"]) or ("2LED" in unitname):
+             if "ShellyBulbDuo" in unitname:
+              Domoticz.Device(Name=unitname, Unit=iUnit,Type=241, Subtype=8, Switchtype=7, Used=1,DeviceID=unitname).Create() # create Cold White + Warm White device
+             elif (mqttpath[2] in ["white","light"]) or ("2LED" in unitname):
               Domoticz.Device(Name=unitname, Unit=iUnit,Type=241, Subtype=3, Switchtype=7, Used=1,DeviceID=unitname).Create() # create Color White device
              else:
               if self.homebridge!="1": # check if homebridge support is needed
@@ -989,6 +1055,24 @@ class BasePlugin:
              color["cw"] = int(jmsg["white"])
              dimmer = str(jmsg["gain"])
              if (Devices[iUnit].nValue != status or Devices[iUnit].sValue != dimmer or json.loads(Devices[iUnit].Color) != color):
+              jColor = json.dumps(color)
+              Domoticz.Debug('Updating device #' + str(Devices[iUnit].ID))
+              Domoticz.Debug('nValue: ' + str(Devices[iUnit].nValue) + ' -> ' + str(status))
+              Domoticz.Debug('sValue: ' + Devices[iUnit].sValue + ' -> ' + dimmer)
+              Domoticz.Debug('Color: ' + Devices[iUnit].Color + ' -> ' + jColor)
+              Devices[iUnit].Update(nValue=status, sValue=dimmer, Color=jColor)
+            elif "ShellyBulbDuo" in unitname: # BulbDuo, maybe other types in the future?
+             color = {}
+             color["m"] = 2
+             color["t"] = int((100-int(jmsg["white"]))*2.55) # translate range 100 to range 255
+             dimmer = str(jmsg["brightness"])
+             changed = False
+             try:
+              if (json.loads(Devices[iUnit].Color) != color):
+               changed = True
+             except:
+              changed = True
+             if (Devices[iUnit].nValue != status) or (Devices[iUnit].sValue != dimmer) or changed:
               jColor = json.dumps(color)
               Domoticz.Debug('Updating device #' + str(Devices[iUnit].ID))
               Domoticz.Debug('nValue: ' + str(Devices[iUnit].nValue) + ' -> ' + str(status))

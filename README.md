@@ -62,11 +62,12 @@ Tested and working with:
  - Shelly Flood
  - Shelly Door and Window sensor
  - Shelly 2LED
- - Shelly Dimmer
+ - Shelly Dimmer/Shelly Dimmer2
  - Shelly Bulb RGBW
  - Shelly EM
  - Shelly Button1
  - Shelly Door Window 2
+ - Shelly i3
 
 **I can only support devices that i have. Thank you for your understanding.**
 
