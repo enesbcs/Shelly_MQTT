@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.3">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.4">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -1068,11 +1068,11 @@ class BasePlugin:
              dimmer = str(jmsg["brightness"])
              changed = False
              try:
-              if (json.loads(Devices[iUnit].Color) != color):
+              if (int(json.loads(Devices[iUnit].Color)["t"]) != int(color["t"])):
                changed = True
              except:
               changed = True
-             if (Devices[iUnit].nValue != status) or (Devices[iUnit].sValue != dimmer) or changed:
+             if (int(Devices[iUnit].nValue) != int(status)) or (int(Devices[iUnit].sValue) != int(dimmer)) or changed:
               jColor = json.dumps(color)
               Domoticz.Debug('Updating device #' + str(Devices[iUnit].ID))
               Domoticz.Debug('nValue: ' + str(Devices[iUnit].nValue) + ' -> ' + str(status))
