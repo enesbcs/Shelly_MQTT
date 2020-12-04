@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.4">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.5">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -1139,6 +1139,27 @@ class BasePlugin:
            mval = str(message).strip()
           try:
             Devices[iUnit].Update(nValue=int(mval),sValue=str(mval))
+            return True
+          except Exception as e:
+            Domoticz.Debug(str(e))
+            return False
+
+         # SENSOR type, not command->process - ADC values
+         elif (len(mqttpath)==4) and (mqttpath[2] == "adc"):
+          unitname = mqttpath[1]+"-"+mqttpath[3]+"-adc"
+          unitname = unitname.strip()
+          iUnit = searchdevice(unitname)
+          if iUnit<0: # if device does not exists in Domoticz, than create it
+            devparams = { "Name" : unitname, "Unit": iUnit, "Type": 243, "Subtype": 8, "Used":1, "DeviceID" : unitname}
+            iUnit = adddevice(**devparams)
+          if iUnit<0:
+            return False
+          try:
+           mval = float(message)
+          except:
+           mval = str(message).strip()
+          try:
+            Devices[iUnit].Update(nValue=0,sValue=str(mval))
             return True
           except Exception as e:
             Domoticz.Debug(str(e))
