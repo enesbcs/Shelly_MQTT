@@ -69,6 +69,8 @@ Tested and working with:
  - Shelly Door Window 2
  - Shelly i3
  - Shelly Bulb Duo
+ - Shelly UNI
+ - Shelly 1L (relay)
 
 **I can only support devices that i have. Thank you for your understanding.**
 
