@@ -1,7 +1,8 @@
-# If you like this project, or you wants to support the development, you can do that by:
-- Contributing to any of my [Wishlist items](https://www.wishlist.com/wishlist/NZvjYJ)
-- Buying a [coffee](https://ko-fi.com/I3I514LLW)
-- Adding Python code by [Pull Request](https://github.com/enesbcs/Shelly_MQTT/pulls)
+# To support the development you can:
+- Buy a [coffee](https://ko-fi.com/I3I514LLW)
+- Contribute to any of my [Wishlist items](https://www.wishlist.com/wishlists_/alexander-nagy/dwGnV/)
+- Be a patron at [Patreon](https://www.patreon.com/enesbcs)
+- Add Python code by [Pull Request](https://github.com/enesbcs/rpieasy/pulls)
 
 # ShellyMQTT - Domoticz Python Plugin
 Python plugin for Shelly relay devices using MQTT protocol
