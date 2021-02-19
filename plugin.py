@@ -133,6 +133,10 @@ class BasePlugin:
      else:
         Domoticz.Error("Your Domoticz Python environment is not functional! "+errmsg)
         self.mqttClient = None
+     if str(Settings["AcceptNewHardware"])!="0":
+      Domoticz.Log("New hardware creation enabled ")
+     else:
+      Domoticz.Log("--> New hardware creation disabled! <-- ")
 
     def checkDevices(self):
         Domoticz.Debug("checkDevices called")
@@ -361,6 +365,7 @@ class BasePlugin:
                     pass
             return unitID
         def adddevice( **kwargs ):
+           if str(Settings["AcceptNewHardware"])!="0":
             try:
                 iUnit = len(Devices)+1
                 # Looking for possible device ID
@@ -376,6 +381,8 @@ class BasePlugin:
                 Domoticz.Error(str(e))
                 return -1
             return iUnit
+           else:
+            return -1
 
         if "/announce" in topic: # announce did not contain any information for us
          return False
@@ -445,7 +452,7 @@ class BasePlugin:
           elif subval=="pf":
            unitname=mqttpath[1]+"-"+str(funcid)+"-pf" # Shelly EM pf
           iUnit = searchdevice(unitname)
-          if iUnit<0: # if device does not exists in Domoticz, than create it
+          if iUnit<0 and str(Settings["AcceptNewHardware"])!="0": # if device does not exists in Domoticz, than create it
             try:
              iUnit = 0
              for x in range(1,256):
@@ -534,7 +541,7 @@ class BasePlugin:
            unitname = mqttpath[1]+"-"+mqttpath[3]+"-roller"
           unitname = unitname.strip()
           iUnit = searchdevice(unitname)
-          if iUnit<0: # if device does not exists in Domoticz, than create it
+          if iUnit<0 and str(Settings["AcceptNewHardware"])!="0": # if device does not exists in Domoticz, than create it
             try:
              iUnit = 0
              for x in range(1,256):
@@ -956,6 +963,7 @@ class BasePlugin:
                          "active":   { "Type" : 244 , "Subtype" : 73 , "Switchtype" : 2 },
                         }
               stypes = ["lux","motion", "vibration","active"]
+              iUnit = -1
               for st in range(len(stypes)):
                  unitname = mqttpath[1]+"-"+stypes[st]
                  iUnit = searchdevice(unitname)
@@ -963,10 +971,10 @@ class BasePlugin:
                   try:
                    devparams = {  "Name" : unitname , "Unit" : iUnit , "Used" : 1 , "DeviceID" : unitname }
                    devparams.update( **sensors[stypes[st]] )
+                   # Create the Domoticz device
+                   iUnit = adddevice( **devparams )
                   except:
                    Domoticz.Status( "Device " + str(unitname) + " unhandled sensor type: " + str(stypes[st]) )
-                  # Create the Domoticz device
-                  iUnit = adddevice( **devparams )
                  if iUnit>=0:
                    if st > 0: #binary
                     try:
@@ -993,7 +1001,7 @@ class BasePlugin:
           unitname = mqttpath[1]+"-"+mqttpath[3]
           unitname = unitname.strip()
           iUnit = searchdevice(unitname)
-          if iUnit<0: # if device does not exists in Domoticz, than create it
+          if iUnit<0 and str(Settings["AcceptNewHardware"])!="0": # if device does not exists in Domoticz, than create it
             try:
              iUnit = 0
              for x in range(1,256):
@@ -1134,7 +1142,7 @@ class BasePlugin:
            unitname = unitname+"-rgb"
           unitname = unitname.strip()
           iUnit = searchdevice(unitname)
-          if iUnit<0: # if device does not exists in Domoticz, than create it
+          if iUnit<0 and str(Settings["AcceptNewHardware"])!="0": # if device does not exists in Domoticz, than create it
             try:
              iUnit = 0
              for x in range(1,256):

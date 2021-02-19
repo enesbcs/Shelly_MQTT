@@ -65,16 +65,18 @@ Tested and working with:
  - Shelly 2LED
  - Shelly Dimmer/Shelly Dimmer2
  - Shelly Bulb RGBW
- - Shelly EM
+ - Shelly EM/3EM
  - Shelly Button1
  - Shelly Door Window 2
  - Shelly i3
  - Shelly Bulb Duo
  - Shelly UNI
  - Shelly 1L (relay)
+ - Shelly Gas
+ - Shelly Motion
 
 **I can only support devices that i have. Thank you for your understanding.**
 
 *Power consumption can be enabled in the plugin settings page manually, it's an optional feature without any further support
 
-**I would like to thank [Allterco Robotics](https://allterco.com/en/Shelly) for providing me with samples of Shelly Plug/Shelly2/Shelly4/Shelly RGBW2/Shelly Dimmer2/Shelly Bulb Duo/Shelly i3 to support the development of this plugin.**
+**I would like to thank [Allterco Robotics](https://allterco.com/en/Shelly) for providing me with samples of Shelly Plug/Shelly2/Shelly4/Shelly RGBW2/Shelly Dimmer2/Shelly Bulb Duo/Shelly i3/Shelly Motion to support the development of this plugin.**
