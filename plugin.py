@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.6">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.7">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
