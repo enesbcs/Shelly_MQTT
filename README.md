@@ -37,9 +37,14 @@ git clone https://github.com/enesbcs/Shelly_MQTT.git
 
 Once plugin receive any MQTT message from Shelly it will try to create appropriate device.
 
-## Plugin update
+## Plugin install&update with plugin manager
 
-Warning: if you use this method, Domoticz may duplicate devices after it! Download only plugin.py if you have a lot of shellies and do not want to risk it!
+I suggest to use a plugin manager for easy updates through Domoticz GUI:
+https://github.com/stas-demydiuk/domoticz-plugins-manager
+
+## Plugin manual update
+
+Warning: if you use this method, Domoticz may duplicate devices after it!
 
 1. Stop domoticz
 2. Go to plugin folder and pull new version
