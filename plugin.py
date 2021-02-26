@@ -531,6 +531,7 @@ class BasePlugin:
                 Domoticz.Log( "Device data: " + str(unitname) + " value: " + str( sval ) + " lastupdate:  " + str( Devices[iUnit].LastUpdate ) );
                 try:
                     format = '%Y-%m-%d %H:%M:%S';
+                    # WORKAROUND:
                     # TypeError attribute of type 'NoneType' is not callable
                     # Python bug workaround
                     try:
