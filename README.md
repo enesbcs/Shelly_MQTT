@@ -1,7 +1,8 @@
-# If you like this project, or you wants to support the development, you can do that by:
-- Contributing to any of my [Wishlist items](https://www.wishlist.com/wishlist/NZvjYJ)
-- Buying a [coffee](https://ko-fi.com/I3I514LLW)
-- Adding Python code by [Pull Request](https://github.com/enesbcs/Shelly_MQTT/pulls)
+# To support the development you can:
+- Buy a [coffee](https://ko-fi.com/I3I514LLW)
+- Contribute to any of my [Wishlist items](https://www.wishlist.com/wishlists_/alexander-nagy/dwGnV/)
+- Be a patron at [Patreon](https://www.patreon.com/enesbcs)
+- Add Python code by [Pull Request](https://github.com/enesbcs/rpieasy/pulls)
 
 # ShellyMQTT - Domoticz Python Plugin
 Python plugin for Shelly relay devices using MQTT protocol
@@ -36,9 +37,14 @@ git clone https://github.com/enesbcs/Shelly_MQTT.git
 
 Once plugin receive any MQTT message from Shelly it will try to create appropriate device.
 
-## Plugin update
+## Plugin install&update with plugin manager
 
-Warning: if you use this method, Domoticz may duplicate devices after it! Download only plugin.py if you have a lot of shellies and do not want to risk it!
+I suggest to use a plugin manager for easy updates through Domoticz GUI:
+https://github.com/stas-demydiuk/domoticz-plugins-manager
+
+## Plugin manual update
+
+Warning: if you use this method, Domoticz may duplicate devices after it!
 
 1. Stop domoticz
 2. Go to plugin folder and pull new version
@@ -64,16 +70,18 @@ Tested and working with:
  - Shelly 2LED
  - Shelly Dimmer/Shelly Dimmer2
  - Shelly Bulb RGBW
- - Shelly EM
+ - Shelly EM/3EM
  - Shelly Button1
  - Shelly Door Window 2
  - Shelly i3
  - Shelly Bulb Duo
  - Shelly UNI
  - Shelly 1L (relay)
+ - Shelly Gas
+ - Shelly Motion
 
 **I can only support devices that i have. Thank you for your understanding.**
 
 *Power consumption can be enabled in the plugin settings page manually, it's an optional feature without any further support
 
-**I would like to thank [Allterco Robotics](https://allterco.com/en/Shelly) for providing me with samples of Shelly Plug/Shelly2/Shelly4/Shelly RGBW2/Shelly Dimmer2/Shelly Bulb Duo/Shelly i3 to support the development of this plugin.**
+**I would like to thank [Allterco Robotics](https://allterco.com/en/Shelly) for providing me with samples of Shelly Plug/Shelly2/Shelly4/Shelly RGBW2/Shelly Dimmer2/Shelly Bulb Duo/Shelly i3/Shelly Motion to support the development of this plugin.**
