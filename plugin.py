@@ -78,6 +78,11 @@ try:
 except Exception as e:
  errmsg += " MQTT client import error: "+str(e)
 
+try:
+    from datetime import datetime
+except Exception as e:
+    errmsg += "  datetime import error: "+str(e)
+
 class BasePlugin:
     mqttClient = None
 
@@ -529,7 +534,28 @@ class BasePlugin:
             sval = str(prevdata[0])+";"+str(mval2)
            try:
             if sval!="":
-             Devices[iUnit].Update(nValue=0,sValue=str(sval))
+                updated = 60;
+                Domoticz.Log( "Device data: " + str(unitname) + " value: " + str( sval ) + " lastupdate:  " + str( Devices[iUnit].LastUpdate ) );
+                try:
+                    format = '%Y-%m-%d %H:%M:%S';
+                    # WORKAROUND:
+                    # TypeError attribute of type 'NoneType' is not callable
+                    # Python bug workaround
+                    try:
+                        lastupdate = datetime.strptime( Devices[iUnit].LastUpdate , format)
+                    except TypeError:
+                        lastupdate = datetime(*(time.strptime( Devices[iUnit].LastUpdate , format)[0:6]))
+
+                    tdelta = datetime.now( ) - lastupdate
+                    updated = tdelta.seconds
+                    Domoticz.Debug( "Device update timedelta: " + str(updated) );
+                except Exception as e:
+                    Domoticz.Error(str(e))
+
+                if( updated > 10 ):
+                    Domoticz.Log( "update: " + str(unitname) + " value: " + str( sval ) + " lastupdate:  " + str( Devices[iUnit].LastUpdate ) );
+                    Devices[iUnit].Update(nValue=0,sValue=str(sval))
+
            except Exception as e:
             Domoticz.Debug(str(e))
           return True
