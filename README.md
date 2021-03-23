@@ -1,3 +1,5 @@
+[![Code size](https://img.shields.io/github/languages/code-size/enesbcs/shelly_mqtt)]() [![Last commit](https://img.shields.io/github/last-commit/enesbcs/shelly_mqtt)]()
+
 # To support the development you can:
 - Be a patron at [Patreon](https://www.patreon.com/enesbcs)
 - Buy a [coffee](https://ko-fi.com/I3I514LLW)
