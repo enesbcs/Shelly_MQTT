@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.7">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.9">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -138,6 +138,7 @@ class BasePlugin:
      else:
         Domoticz.Error("Your Domoticz Python environment is not functional! "+errmsg)
         self.mqttClient = None
+#     Domoticz.Log("accept"+str(Settings["AcceptNewHardware"]))
      if str(Settings["AcceptNewHardware"])!="0":
       Domoticz.Log("New hardware creation enabled ")
      else:
@@ -242,14 +243,8 @@ class BasePlugin:
          if (Command == "Set Level"):
             mqttpath = ""
             if int(Level)>0:
-             if "bulb" in device_id[0] and ("duo" not in device_id[0]): # Support Bulb device
-              amode = '"ison": true'
-             else:
               amode = '"turn": "on"'    # standard RGB device
             else:
-             if "bulb" in device_id[0] and ("duo" not in device_id[0]):
-              amode = '"ison": false'
-             else:
               amode = '"turn": "off"'
             if device_id[3]=="rgb":
              mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/color/"+device_id[2]+"/set"
@@ -278,9 +273,9 @@ class BasePlugin:
              mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/color/"+device_id[2]+"/set"
              if "bulb" in device_id[0]: # Handle Bulb device
               if color["r"] == 0 and color["g"] == 0 and color["b"] == 0:
-               scmd = '{"ison":"true","mode":"white","white":'+str(color["cw"])+',"brightness":'+str(Level)+'}'
+               scmd = '{"turn":"on","mode":"white","white":'+str(color["cw"])+',"brightness":'+str(Level)+'}'
               else:
-               scmd = '{"ison":"true","mode":"color","red":'+str(color["r"])+',"green":'+str(color["g"])+',"blue":'+str(color["b"]) +',"white":'+str(color["cw"])+',"gain":'+str(Level)+'}'
+               scmd = '{"turn":"on","mode":"color","red":'+str(color["r"])+',"green":'+str(color["g"])+',"blue":'+str(color["b"]) +',"white":'+str(color["cw"])+',"gain":'+str(Level)+'}'
              else: # Handle standard RGB device
               scmd = '{"turn":"on","mode":"color","red":'+str(color["r"])+',"green":'+str(color["g"])+',"blue":'+str(color["b"]) +',"white":'+str(color["cw"])+'}'
              Domoticz.Debug('RGB Color:' + scmd)
