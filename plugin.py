@@ -1,5 +1,5 @@
 """
-<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.5.9">
+<plugin key="ShellyMQTT" name="Shelly MQTT" version="0.6.0">
     <description>
       Simple plugin to manage Shelly switches through MQTT
       <br/>
@@ -530,7 +530,7 @@ class BasePlugin:
            try:
             if sval!="":
                 updated = 60;
-                Domoticz.Log( "Device data: " + str(unitname) + " value: " + str( sval ) + " lastupdate:  " + str( Devices[iUnit].LastUpdate ) );
+                Domoticz.Debug( "Device data: " + str(unitname) + " value: " + str( sval ) + " lastupdate:  " + str( Devices[iUnit].LastUpdate ) );
                 try:
                     format = '%Y-%m-%d %H:%M:%S';
                     # WORKAROUND:
