@@ -548,7 +548,7 @@ class BasePlugin:
                     Domoticz.Error(str(e))
 
                 if( updated > 10 ):
-                    Domoticz.Log( "update: " + str(unitname) + " value: " + str( sval ) + " lastupdate:  " + str( Devices[iUnit].LastUpdate ) );
+                    Domoticz.Debug( "update: " + str(unitname) + " value: " + str( sval ) + " lastupdate:  " + str( Devices[iUnit].LastUpdate ) );
                     Devices[iUnit].Update(nValue=0,sValue=str(sval))
 
            except Exception as e:
