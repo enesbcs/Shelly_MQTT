@@ -2,7 +2,6 @@
 
 # To support the development you can:
 - Be a patron at [Patreon](https://www.patreon.com/enesbcs)
-- Buy a [coffee](https://ko-fi.com/I3I514LLW)
 - Add Python code by [Pull Request](https://github.com/enesbcs/rpieasy/pulls)
 
 # ShellyMQTT - Domoticz Python Plugin
