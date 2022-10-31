@@ -223,14 +223,14 @@ class BasePlugin:
           else: # command arrived
            scmd = ""                      # Translate Domoticz command to Shelly command
            if str(Parameters["Mode1"])!="1": # check if global inversion requested
-            if cmnd == "on":
+            if cmnd == "open":
              scmd = "close"
-            elif cmnd == "off":
+            elif cmnd == "close":
              scmd = "open"
            else:
-            if cmnd == "on":
+            if cmnd == "open":
              scmd = "open"
-            elif cmnd == "off":
+            elif cmnd == "close":
              scmd = "close"
            if scmd != "":
             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command"
