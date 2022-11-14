@@ -189,16 +189,16 @@ class BasePlugin:
          if str(Parameters["Mode1"])!="1": # check if global inversion requested
           if cmd == "stop":
            scmd = "stop"
-          elif cmd == "on":
+          elif cmd == "close":
            scmd = "close"
-          elif cmd == "off":
+          elif cmd == "open":
            scmd = "open"
          else:
           if cmd == "stop":
            scmd = "stop"
-          elif cmd == "on":
+          elif cmd == "close":
            scmd = "open"
-          elif cmd == "off":
+          elif cmd == "open":
            scmd = "close"
          if scmd != "":
           mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command"
