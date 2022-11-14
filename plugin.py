@@ -187,14 +187,14 @@ class BasePlugin:
          cmd = Command.strip().lower()
          scmd = ""                      # Translate Domoticz command to Shelly command
          if str(Parameters["Mode1"])!="1": # check if global inversion requested
-          if cmd == "stop":
+          if cmd == "Stop":
            scmd = "stop"
           elif cmd == "close":
            scmd = "close"
           elif cmd == "open":
            scmd = "open"
          else:
-          if cmd == "stop":
+          if cmd == "Stop":
            scmd = "stop"
           elif cmd == "close":
            scmd = "open"
@@ -221,19 +221,26 @@ class BasePlugin:
            except Exception as e:
             Domoticz.Debug(str(e))
           else: # command arrived
-           scmd = ""                      # Translate Domoticz command to Shelly command
+           scmd = ""
+           Domoticz.Debug(cmnd)                      # Translate Domoticz command to Shelly command
            if str(Parameters["Mode1"])!="1": # check if global inversion requested
             if cmnd == "open":
              scmd = "close"
             elif cmnd == "close":
              scmd = "open"
+            elif cmnd == "stop":
+             scmd = "stop"
+ 
            else:
             if cmnd == "open":
              scmd = "open"
             elif cmnd == "close":
              scmd = "close"
+            elif cmnd == "stop":
+             scmd = "stop"
            if scmd != "":
             mqttpath = self.base_topic+"/"+device_id[0]+"-"+device_id[1]+"/roller/"+device_id[2]+"/command"
+            Domoticz.Debug(mqttpath)
             try:
              self.mqttClient.publish(mqttpath, scmd)
             except Exception as e:
