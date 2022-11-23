@@ -186,7 +186,7 @@ class BasePlugin:
         elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="roller":
          cmd = Command.strip().lower()
          scmd = ""                      # Translate Domoticz command to Shelly command
-         if str(Parameters["Mode1"])!="1": # check if global inversion requested
+         if str(Parameters["Mode1"])=="1": # check if global inversion requested
           if cmd == "stop":
            scmd = "stop"
           elif cmd == "open" or cmd == "on":
@@ -210,7 +210,7 @@ class BasePlugin:
         elif relnum in range(0,4) and len(device_id)==4 and device_id[len(device_id)-1]=="pos":
           cmnd = str(Command).strip().lower()
           if (cmnd=="set level"): # percentage requested
-           if str(Parameters["Mode1"])=="1": # check if global inversion requested
+           if str(Parameters["Mode1"])!="1": # check if global inversion requested
              pos = str(Level).strip().lower()
            else:
              pos = str(100-Level).strip().lower()
@@ -223,7 +223,7 @@ class BasePlugin:
           else: # command arrived
            scmd = ""
            Domoticz.Debug(cmnd)                      # Translate Domoticz command to Shelly command
-           if str(Parameters["Mode1"])!="1": # check if global inversion requested
+           if str(Parameters["Mode1"])=="1": # check if global inversion requested
             if cmnd == "open" or cmnd == "on":
              scmd = "close"
             elif cmnd == "close" or cmnd == "off":
@@ -586,7 +586,7 @@ class BasePlugin:
              return False
           if "-pos" in unitname:
            try:
-            if str(Parameters["Mode1"])=="1": # check if global inversion requested
+            if str(Parameters["Mode1"])!="1": # check if global inversion requested
              pval = int(str(message).strip())
             else:
              pval = 100-int(str(message).strip())
