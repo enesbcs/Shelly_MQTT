@@ -23,6 +23,8 @@ http://mosquitto.org/blog/2013/01/mosquitto-debian-repository/
 
 !!! Please, DO NOT CHECK "Use custom MQTT prefix" on your device settings page if you want to use this plugin as this will render device detection unusable !!!
 
+!!! For Shelly Plus HT, please prefix the MQTT topic with `shellies/` on your device settings page to make it send on the same topic as other devices !!!
+
 ## Installation
 
 1. Clone repository into your domoticz plugins folder
@@ -79,6 +81,7 @@ Tested and working with:
  - Shelly 1L (relay)
  - Shelly Gas
  - Shelly Motion
+ - Shelly Plus H&T (by setting MQTT prefix to `shellies`)
 
 **I can only support devices that i have. Thank you for your understanding.**
 

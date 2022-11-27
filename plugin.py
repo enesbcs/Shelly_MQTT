@@ -394,6 +394,7 @@ class BasePlugin:
          return False
         try:
          topic = str(topic)
+         original_message = message
          message = str(message)
         except:
          Domoticz.Debug("MQTT message is not a valid string!") #if message is not a real string, drop it
@@ -1328,6 +1329,38 @@ class BasePlugin:
             return False
 
           return True
+
+         elif (len(mqttpath)==4) and (mqttpath[2] == "events") and (mqttpath[3] == "rpc") and ("shellyplusht" in mqttpath[1]):
+          unitname = mqttpath[1]+"-sensor"
+          unitname = unitname.strip()
+          iUnit = searchdevice(unitname)
+          if iUnit<0: # if device does not exists in Domoticz, than create it
+            devparams = { "Name" : unitname, "Unit": iUnit, "TypeName" :"Temp+Hum", "Used":1, "DeviceID" : unitname}
+            iUnit = adddevice(**devparams)
+          if iUnit<0:
+            return False
+          try:
+            if isinstance(original_message, dict):
+              data = original_message
+            else:
+              data = json.loads(original_message)
+            if data['method'] == 'NotifyFullStatus':
+              battery_percent = float(data['params']['devicepower:0']['battery']['percent'])
+              humidity = float(data['params']['humidity:0']['rh'])
+              temperature = float(data['params']['temperature:0']['tC'])
+              if int(humidity) >= 50 and int(humidity) <= 70:
+                hstat = 1
+              elif int(humidity) < 40:
+                hstat = 2
+              elif int(humidity) > 70:
+                hstat = 3
+              sval = str(temperature) + ";" + str(humidity) + ";" + str(hstat)
+              try:
+                Devices[iUnit].Update(nValue=0, sValue=str(sval), BatteryLevel=int(battery_percent))
+              except Exception as e:
+                Domoticz.Debug(str(e))
+          except Exception as e:
+            Domoticz.Error(str(e))
 
 global _plugin
 _plugin = BasePlugin()
