@@ -1,8 +1,6 @@
 [![Code size](https://img.shields.io/github/languages/code-size/enesbcs/shelly_mqtt)]() [![Last commit](https://img.shields.io/github/last-commit/enesbcs/shelly_mqtt)]()
 
-# To support the development you can:
-- Be a patron at [Patreon](https://www.patreon.com/enesbcs)
-- Add Python code by [Pull Request](https://github.com/enesbcs/rpieasy/pulls)
+# In 2022 i am using Domoticz MQTT AutoDiscovery hardware for my own Shelly devices, so further improvement of this plugin is now ended. I may publish a script which teaches shellies to AD in the future, depending on amount of my spare time. [PR](https://github.com/enesbcs/rpieasy/pulls)'s can be added until i will archive this project, but will be untested.
 
 # ShellyMQTT - Domoticz Python Plugin
 Python plugin for Shelly relay devices using MQTT protocol
@@ -82,8 +80,6 @@ Tested and working with:
  - Shelly Gas
  - Shelly Motion
  - Shelly Plus H&T (by setting MQTT prefix to `shellies`)
-
-**I can only support devices that i have. Thank you for your understanding.**
 
 *Power consumption can be enabled in the plugin settings page manually, it's an optional feature without any further support
 
