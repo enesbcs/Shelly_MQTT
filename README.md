@@ -1,7 +1,7 @@
 [![Code size](https://img.shields.io/github/languages/code-size/enesbcs/shelly_mqtt)]() [![Last commit](https://img.shields.io/github/last-commit/enesbcs/shelly_mqtt)]()
 
-# This plugin is free and open source, you can use forever and any purpose you like. But further improvement is stopped in favor of a simplest solution.
-# The script which adds Shelly devices to Domoticz MQTT Autodiscovery hardware is published at https://github.com/enesbcs/shellyteacher4domo and that is currently under development.
+# This plugin is free and open source, you can use forever and any purpose you like. But further improvement is stopped.
+# The experimental script which adds Shelly devices to Domoticz MQTT Autodiscovery hardware is published at https://github.com/enesbcs/shellyteacher4domo and that is currently under development.
 
 # ShellyMQTT - Domoticz Python Plugin
 Python plugin for Shelly relay devices using MQTT protocol
